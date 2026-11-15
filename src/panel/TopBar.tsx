@@ -2,6 +2,7 @@ import { useStore } from '../model/store';
 import { STATES, STATE_LABELS } from '../model/types';
 import { Editable } from '../canvas/Editable';
 import { settingsHref } from '../model/navigation';
+import { SyncStatus } from '../sync/SyncStatus';
 export function HistoryButtons() {
   const undo = useStore((s) => s.undo),
     redo = useStore((s) => s.redo),
@@ -90,6 +91,7 @@ export function TopBar({ panelId }: { panelId: string }) {
           <Filters />
         </div>
         <div className="topActions">
+          <SyncStatus />
           <HistoryButtons />
           <a
             className="iconButton settingsLink"

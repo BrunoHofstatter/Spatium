@@ -4,6 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: '/Spatium/',
+  build: {
+    rollupOptions: {
+      output: { manualChunks: { supabase: ['@supabase/supabase-js'] } },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

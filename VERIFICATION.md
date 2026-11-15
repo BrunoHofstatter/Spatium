@@ -1,5 +1,17 @@
 # Spatium implementation and review record
 
+## Private cloud sync — 2026-11-15
+
+The owner approved adding single-user phone/PC sync through Supabase. The client uses project `pfomcrdvmrrufutppuwl` and the provided browser publishable key. Credentials for database administration and app login are not embedded in the app. This supersedes the original local-only scope for the sync work.
+
+Implemented: email/password login, explicit first upload or whole-copy choice, local persistence before cloud writes, server-enforced revision checks, refresh on focus/foreground and lightweight revision polling, offline retry/reload, device-local viewport positions, account binding, conflict recovery snapshots, and visible cloud status. Recovery keeps up to twelve recent copies on the device where a choice was made. Local editing remains available when signed out or offline.
+
+`supabase/setup.sql` creates one configured owner, private storage, anonymous-access denial and atomic version-checked save functions. It must be applied to the hosted project after creating the single Auth user and disabling public signup. The owner-only SQL setup was exercised against PostgreSQL through PGlite, including denied anonymous/other-user reads and writes, denied direct updates, stale-revision rejection and safe reapplication. `scripts/provision-supabase.mjs` can perform the hosted setup using temporary secure-input files; no admin access had been supplied at this verification point, so hosted provisioning and a real-account cross-device acceptance test remain pending. See `supabase/README.md` for the matching setup instructions.
+
+Final sync-change checks: **44 passing unit/SQL tests**, **57 passing desktop/portrait browser tests with 25 input-specific skips**, lint, strict TypeScript/production build, and production IndexedDB/offline service-worker smoke all passed. Browser sync tests use independent device storage and mocked Supabase Auth/Data APIs. They cover first upload, another device pulling changes, conflicting offline edits surviving a reload, explicit conflict choice and retained recovery, local viewport preservation, and incorrect-password behavior. Runtime dependency audit: zero findings. No additional delegated review round was started.
+
+The earlier implementation/review history below remains as a record of those checkpoints; its old local-only and deployment status notes are historical.
+
 ## Current mobile-usability revision — 2026-11-15
 
 Implemented the owner-approved mobile adaptations: a simpler bottom action bar with More; a labelled, larger State button and explicit four-choice touch menu; Select more with tap-to-toggle membership and Finish selection; touch-accessible task/area title sizing with −/+ controls; first-tap selection before text editing; transparent inline editing with Done and visual-viewport/caret accommodation; bounded zoom compensation for selected resize handles; visible, occupancy-aware creation within a selected area; area focus with bottom-control clearance and mobile task focus at a readable width; Home/subtask reorder previews, insertion markers and edge scroll/pan; Home Move up/down actions; and a 9-pixel touch alignment tolerance matching preview and release.

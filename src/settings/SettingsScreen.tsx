@@ -10,6 +10,7 @@ import { HistoryButtons } from '../panel/TopBar';
 import { useEffect, useState } from 'react';
 import { settingsReturn } from '../model/navigation';
 import { FontSizeControl } from '../ui/FontSizeControl';
+import { SyncSettings } from '../sync/SyncSettings';
 export function SettingsScreen() {
   const settings = useStore((s) => s.doc.settings);
   const panels = useStore((s) => s.doc.panels);
@@ -49,6 +50,7 @@ export function SettingsScreen() {
       </header>
       <h1>Settings</h1>
       <div className="settingsGrid">
+        <SyncSettings />
         <section className="settingsSection">
           <h2>Task titles</h2>
           <p>Applies to existing and new tasks using the default size.</p>

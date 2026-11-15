@@ -3,6 +3,7 @@ import { useStore } from '../model/store';
 import { PanelThumbnail } from './PanelThumbnail';
 import { Editable } from '../canvas/Editable';
 import { HistoryButtons } from '../panel/TopBar';
+import { SyncStatus } from '../sync/SyncStatus';
 import { useTouchReorder } from '../ui/useTouchReorder';
 export function HomeScreen() {
   const panels = useStore((s) => s.doc.panels),
@@ -36,6 +37,7 @@ export function HomeScreen() {
       <header className="homeHeader">
         <h1>my Spatium</h1>
         <div className="homeActions">
+          <SyncStatus />
           <HistoryButtons />
           <a href="#/settings" className="iconButton" aria-label="Settings">
             ⚙

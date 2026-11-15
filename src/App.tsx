@@ -7,6 +7,8 @@ import { SettingsScreen } from './settings/SettingsScreen';
 import { deleteSelection } from './canvas/SelectionToolbar';
 import styles from './styles/App.module.css';
 import { TouchEditing } from './canvas/TouchEditing';
+import { startCloudSync } from './sync/runtime';
+import { useSync } from './sync/state';
 let boot: Promise<() => void> | undefined;
 export function App() {
   const [hash, setHash] = useState(window.location.hash),
@@ -15,8 +17,14 @@ export function App() {
     error = useStore((s) => s.error),
     importantColor = useStore((s) => s.doc.settings.importantColor),
     panels = useStore((s) => s.doc.panels);
+  const locked = useSync((s) => s.locked);
   useEffect(() => {
-    boot ??= startPersistence(new IndexedDbRepository());
+    boot ??= (async () => {
+      const device = new IndexedDbRepository();
+      const persistence = await startPersistence(device);
+      startCloudSync(device, persistence);
+      return persistence;
+    })();
     void boot.catch((error) =>
       setLoadError(
         error instanceof Error
@@ -45,6 +53,10 @@ export function App() {
   }, []);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (useSync.getState().locked) {
+        e.preventDefault();
+        return;
+      }
       if (
         (e.target as HTMLElement).closest(
           'input,textarea,select,[contenteditable="true"]',
@@ -101,14 +113,21 @@ export function App() {
           {error}
         </div>
       )}
-      <TouchEditing />
-      {hash.split('?')[0] === '#/settings' ? (
-        <SettingsScreen />
-      ) : id && panels[id] ? (
-        <PanelScreen panelId={id} />
-      ) : (
-        <HomeScreen />
+      {locked && (
+        <div className="syncLock" role="status" aria-live="polite">
+          Updating your saved work…
+        </div>
       )}
+      <div className="appContents" inert={locked}>
+        <TouchEditing />
+        {hash.split('?')[0] === '#/settings' ? (
+          <SettingsScreen />
+        ) : id && panels[id] ? (
+          <PanelScreen panelId={id} />
+        ) : (
+          <HomeScreen />
+        )}
+      </div>
     </div>
   );
 }
