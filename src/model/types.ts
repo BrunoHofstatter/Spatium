@@ -1,34 +1,33 @@
 export type ID = string;
 export const STATES = ['blank', 'delayed', 'inProgress', 'done'] as const;
-export type TaskState = (typeof STATES)[number];
-export const STATE_LABELS: Record<TaskState, string> = {
+export const STATE_LABELS = {
   blank: 'Blank',
   delayed: 'Delayed',
   inProgress: 'In Progress',
   done: 'Done',
 };
+export type TaskState = (typeof STATES)[number];
 export type Highlight = TaskState | 'important';
 export interface Point {
   x: number;
   y: number;
 }
+// Device-local board scroll, retained under this name for existing sync checkpoints.
 export interface Viewport extends Point {
   zoom: number;
 }
 export interface Panel {
   id: ID;
   title: string;
+  columns: string[];
   viewport: Viewport;
   createdAt: number;
   updatedAt: number;
 }
-export interface ItemBase extends Point {
+interface ItemBase {
   id: ID;
   panelId: ID;
-  parentId: ID | null;
-  w: number;
-  h: number;
-  z: number;
+  order: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -39,6 +38,8 @@ export interface Subtask {
 }
 export interface TaskItem extends ItemBase {
   type: 'task';
+  parentId: ID;
+  column: 0 | 1;
   title: string;
   description: string;
   state: TaskState;
@@ -50,16 +51,14 @@ export interface TaskItem extends ItemBase {
 }
 export interface AreaItem extends ItemBase {
   type: 'area';
+  parentId: null;
+  columnId: string;
+  taskColumns: 1 | 2;
   title: string;
   color: string | null;
-  collapsed: boolean;
   fontSize: number;
 }
-export interface NoteItem extends ItemBase {
-  type: 'note';
-  text: string;
-}
-export type Item = TaskItem | AreaItem | NoteItem;
+export type Item = TaskItem | AreaItem;
 export interface Settings {
   stateColors: Record<TaskState, string>;
   importantColor: string;

@@ -8,6 +8,7 @@ import {
 } from './supabase';
 import { deviceDocument, fingerprint, hasWork } from './document';
 import { useSync } from './state';
+import { CLOUD_GRID_BACKUP_KEY } from '../model/migration';
 
 export const SYNC_KEY = 'spatium-cloud-checkpoint';
 export interface RecoveryCopy {
@@ -77,6 +78,11 @@ export class SyncEngine {
         base: null,
         recovery: [],
       };
+      if (this.checkpoint.base)
+        this.checkpoint = {
+          ...this.checkpoint,
+          base: fingerprint(migrate(JSON.parse(this.checkpoint.base))),
+        };
       useSync.setState({ hasRecovery: this.checkpoint.recovery.length > 0 });
       await this.run();
     } catch (error) {
@@ -107,6 +113,18 @@ export class SyncEngine {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => void this.run(), delay);
   }
+  private async readCloud() {
+    const remote = await this.cloud.read();
+    if (
+      remote?.legacyDocument &&
+      (await this.device.readMetadata(CLOUD_GRID_BACKUP_KEY)) === undefined
+    )
+      await this.device.writeMetadata(
+        CLOUD_GRID_BACKUP_KEY,
+        remote.legacyDocument,
+      );
+    return remote;
+  }
   async run() {
     if (!this.account || !this.checkpoint || this.busy) return;
     if (
@@ -119,13 +137,20 @@ export class SyncEngine {
     this.busy = true;
     useSync.setState({ working: true });
     try {
-      const remote = await this.cloud.read();
+      const remote = await this.readCloud();
       if (generation !== this.generation) return;
       const doc = useStore.getState().doc,
         local = fingerprint(doc),
         remotePrint = remote && fingerprint(remote.document);
       if (remote && local === remotePrint) {
-        await this.ack(remote);
+        if (remote.legacyDocument) {
+          await this.persistence.flush();
+          const upgraded = await this.cloud.write(
+            useStore.getState().doc,
+            remote.revision,
+          );
+          if (generation === this.generation) await this.ack(upgraded);
+        } else await this.ack(remote);
         return;
       }
       if (this.checkpoint.base === null) {
@@ -277,7 +302,7 @@ export class SyncEngine {
     useSync.setState({ working: true, locked: true });
     try {
       await this.persistence.flush();
-      const remote = await this.cloud.read();
+      const remote = await this.readCloud();
       if (generation !== this.generation) return;
       if ((remote?.revision ?? null) !== expected) {
         this.choice('conflict', remote);

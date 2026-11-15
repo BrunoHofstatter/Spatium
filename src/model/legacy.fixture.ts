@@ -1,0 +1,86 @@
+import { DEFAULT_SETTINGS, type Doc, type TaskItem } from './legacyTypes';
+export function legacyFixture(): Doc {
+  const base = {
+    panelId: 'panel',
+    x: 0,
+    y: 0,
+    w: 260,
+    h: 120,
+    z: 1,
+    createdAt: 10,
+    updatedAt: 20,
+  };
+  const task: TaskItem = {
+    ...base,
+    id: 'task',
+    parentId: 'child',
+    type: 'task',
+    title: 'Keep this title',
+    description: 'First line\nSecond line',
+    state: 'delayed',
+    important: true,
+    subtasks: [{ id: 'sub', title: 'Keep subtask', state: 'done' }],
+    subtasksExpanded: true,
+    collapsed: false,
+    titleFontSize: 22,
+  };
+  return {
+    schemaVersion: 3,
+    panelOrder: ['panel'],
+    panels: {
+      panel: {
+        id: 'panel',
+        title: 'Project',
+        viewport: { x: 80, y: 80, zoom: 1 },
+        createdAt: 10,
+        updatedAt: 20,
+      },
+    },
+    settings: structuredClone(DEFAULT_SETTINGS),
+    items: {
+      parent: {
+        ...base,
+        id: 'parent',
+        parentId: null,
+        type: 'area',
+        title: 'Parent',
+        w: 800,
+        h: 600,
+        color: '#ff8800',
+        fontSize: 30,
+        collapsed: false,
+      },
+      child: {
+        ...base,
+        id: 'child',
+        parentId: 'parent',
+        type: 'area',
+        title: 'Child',
+        x: 30,
+        y: 50,
+        w: 420,
+        h: 280,
+        color: null,
+        fontSize: 24,
+        collapsed: false,
+      },
+      task,
+      loose: {
+        ...task,
+        id: 'loose',
+        parentId: null,
+        x: 900,
+        y: 40,
+        title: 'Loose task',
+        collapsed: true,
+      },
+      note: {
+        ...base,
+        id: 'note',
+        parentId: 'parent',
+        type: 'note',
+        text: 'Old note',
+      },
+    },
+  };
+}

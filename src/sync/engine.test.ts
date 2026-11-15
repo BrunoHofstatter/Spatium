@@ -14,15 +14,21 @@ import {
 } from './supabase';
 import { cloudDocument, deviceDocument, fingerprint } from './document';
 import { useSync } from './state';
+import { legacyFixture } from '../model/legacy.fixture';
+import { migrate, CLOUD_GRID_BACKUP_KEY } from '../model/migration';
 
 class Device implements DeviceStorage {
+  extra = new Map<string, unknown>();
   metadata: Checkpoint | undefined;
   writes = 0;
-  async readMetadata<T>() {
-    return structuredClone(this.metadata) as T | undefined;
+  async readMetadata<T>(key: string) {
+    return structuredClone(
+      key === SYNC_KEY ? this.metadata : this.extra.get(key),
+    ) as T | undefined;
   }
-  async writeMetadata(_key: string, value: unknown) {
-    this.metadata = structuredClone(value) as Checkpoint;
+  async writeMetadata(key: string, value: unknown) {
+    if (key === SYNC_KEY) this.metadata = structuredClone(value) as Checkpoint;
+    else this.extra.set(key, structuredClone(value));
   }
   async replace(doc: Doc, key: string, value: unknown) {
     ++this.writes;
@@ -79,6 +85,31 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 describe('whole-document cloud sync', () => {
+  it('normalizes an old checkpoint, pins the raw cloud copy, and upgrades without a false conflict', async () => {
+    const raw = legacyFixture(),
+      device = new Device(),
+      cloud = new Cloud();
+    store().hydrate(migrate(raw));
+    device.metadata = {
+      ownerId: 'owner',
+      revision: 7,
+      base: JSON.stringify(raw),
+      recovery: [],
+    };
+    cloud.value = { document: migrate(raw), revision: 7, legacyDocument: raw };
+    const engine = new SyncEngine(device, { flush: async () => {} }, cloud);
+    await engine.connect('owner', 'owner@example.com');
+    expect(useSync.getState().status).toBe('saved');
+    expect(cloud.writes).toBe(1);
+    expect(cloud.value?.document.schemaVersion).toBe(4);
+    expect(device.extra.get(CLOUD_GRID_BACKUP_KEY)).toEqual(raw);
+    expect(store().doc.items.task).toMatchObject({
+      description: 'First line\nSecond line',
+    });
+    await engine.run();
+    expect(device.extra.get(CLOUD_GRID_BACKUP_KEY)).toEqual(raw);
+    expect(cloud.writes).toBe(1);
+  });
   it('requires an explicit first upload and never publishes local work on login alone', async () => {
     const device = new Device(),
       cloud = new Cloud(),

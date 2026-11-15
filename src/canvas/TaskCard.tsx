@@ -1,43 +1,84 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useStore } from '../model/store';
 import type { TaskItem } from '../model/types';
-import { Editable } from './Editable';
 import { StatePicker } from './StatePicker';
-import { taskFont, taskRowHeight } from '../model/taskLayout';
+import { Editable } from './Editable';
+import { TaskActions } from './SelectionToolbar';
 import { useTouchReorder } from '../ui/useTouchReorder';
-import { revealItem } from './focusArea';
 export function TaskCard({ item }: { item: TaskItem }) {
-  const editing = useStore((s) => s.editingId === item.id),
-    showDone = useStore((s) => s.doc.settings.showDone);
-  const [newSub, setNewSub] = useState<string | null>(null);
-  const settings = useStore((s) => s.doc.settings);
-  const beginReorder = useTouchReorder({
+  const settings = useStore((s) => s.doc.settings),
+    mode = useStore((s) => s.selectionMode),
+    selected = useStore((s) => s.selection.includes(item.id)),
+    editingId = useStore((s) => s.editingId),
+    highlights = useStore((s) => s.highlights);
+  const [menu, setMenu] = useState(false);
+  const update = (patch: Partial<TaskItem>) =>
+    useStore.getState().updateItem(item.id, patch);
+  const add = () => {
+    const id = useStore.getState().addSubtask(item.id);
+    useStore.getState().setEditing(id);
+  };
+  const reorder = useTouchReorder({
     rows: () => [
       ...document.querySelectorAll<HTMLElement>(
-        `[data-item-id="${item.id}"] .subtask[data-subtask-id]`,
+        `[data-grid-task="${item.id}"] .subtask[data-subtask-id]`,
       ),
     ],
     attribute: 'data-subtask-id',
-    panelId: item.panelId,
+    scrollElement: () => document.querySelector('.areaScroll'),
     drop: (from, to, after) =>
       useStore.getState().reorderSubtasks(item.id, from, to, after),
   });
-  const update = (patch: Partial<TaskItem>) =>
-    useStore.getState().updateItem(item.id, patch);
-  const add = () => setNewSub(useStore.getState().addSubtask(item.id));
+  const matches =
+    highlights.includes(item.state) ||
+    (item.important && highlights.includes('important'));
+  const toggle = () => {
+    const s = useStore.getState();
+    s.select(
+      s.selection.includes(item.id)
+        ? s.selection.filter((id) => id !== item.id)
+        : [...s.selection, item.id],
+    );
+  };
   const done = item.subtasks.filter((s) => s.state === 'done').length;
   return (
     <>
-      <div
-        className={`taskMain ${item.collapsed ? 'collapsedTask' : ''}`}
+      <article
+        className={`gridTask ${item.collapsed ? 'collapsedTask' : ''} ${selected ? 'selected' : ''} ${item.state === 'done' ? 'done' : ''} ${highlights.length ? (matches ? 'matched' : 'dimmed') : ''}`}
+        data-grid-task={item.id}
+        data-drag-title={item.title}
+        aria-label={`Task ${item.title}`}
+        tabIndex={0}
         style={
           {
-            height: item.collapsed
-              ? taskRowHeight(item, settings.taskTitleSize)
-              : item.h,
-            '--task-title-size': `${taskFont(item, settings)}px`,
-          } as React.CSSProperties
+            '--item-color': settings.stateColors[item.state],
+            '--task-title-size': `${item.titleFontSize ?? settings.taskTitleSize}px`,
+          } as CSSProperties
         }
+        onClickCapture={(e) => {
+          if (mode) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle();
+          }
+        }}
+        onClick={(e) => {
+          if (
+            item.collapsed &&
+            !(e.target as HTMLElement).closest('button,input,textarea')
+          )
+            update({ collapsed: false });
+        }}
+        onKeyDown={(e) => {
+          if (
+            e.target === e.currentTarget &&
+            (e.key === 'Enter' || e.key === ' ')
+          ) {
+            e.preventDefault();
+            if (mode) toggle();
+            else update({ collapsed: !item.collapsed });
+          }
+        }}
       >
         <div className="taskHeading">
           <StatePicker
@@ -45,153 +86,158 @@ export function TaskCard({ item }: { item: TaskItem }) {
             state={item.state}
             onChange={(state) => update({ state })}
           />
+          <Editable
+            label="Task title"
+            className="taskTitle"
+            activation={item.collapsed ? 'none' : 'click'}
+            value={item.title}
+            editing={editingId === item.id}
+            onFinish={() => useStore.getState().setEditing(null)}
+            onCommit={(title) => update({ title })}
+          />
+          {item.important && (
+            <span className="importantMarker" aria-label="Important">
+              ★
+            </span>
+          )}
           {item.collapsed && item.subtasks.length > 0 && (
             <span
               className="taskProgress"
               role="img"
               aria-label={`${done} of ${item.subtasks.length} subtasks done`}
-              title={`${done} of ${item.subtasks.length} subtasks done`}
               style={
                 {
                   '--progress': `${(done / item.subtasks.length) * 100}%`,
-                } as React.CSSProperties
+                } as CSSProperties
               }
-            >
-              {done === item.subtasks.length ? '✓' : ''}
-            </span>
+            />
           )}
-          <Editable
-            className="taskTitle"
-            label="Task title"
-            value={item.title}
-            editing={editing}
-            onFinish={() => useStore.getState().setEditing(null)}
-            onCommit={(title) => update({ title })}
-          />
-          <button
-            className={`star ${item.important ? 'starOn' : ''}`}
-            aria-label="Important"
-            aria-pressed={item.important}
-            onClick={() => update({ important: !item.important })}
-          >
-            {item.important ? '★' : '☆'}
-          </button>
           <button
             className="taskCollapse"
             aria-label={item.collapsed ? 'Expand task' : 'Collapse task'}
             aria-expanded={!item.collapsed}
-            onClick={() => {
-              update({ collapsed: !item.collapsed });
-              if (
-                item.collapsed &&
-                window.matchMedia('(pointer: coarse)').matches
-              )
-                requestAnimationFrame(() => revealItem(item.id));
-            }}
+            onClick={() => update({ collapsed: !item.collapsed })}
           >
             {item.collapsed ? '▸' : '▾'}
           </button>
+          <button
+            className="taskMore"
+            aria-label={`Actions for task ${item.title}`}
+            onClick={() => setMenu(true)}
+          >
+            ⋯
+          </button>
         </div>
         {!item.collapsed && (
-          <div className="description">
-            <Editable
-              label="Description"
-              value={item.description}
-              placeholder="Add a description…"
-              multiline
-              onCommit={(description) => update({ description })}
-              onLiveChange={(description) => update({ description })}
-              onEditStart={() =>
-                useStore.getState().beginHistoryGroup(`description:${item.id}`)
+          <>
+            <div className="description">
+              <Editable
+                label="Description"
+                multiline
+                value={item.description}
+                placeholder="Add a description…"
+                onCommit={(description) => update({ description })}
+                onLiveChange={(description) => update({ description })}
+                onEditStart={() =>
+                  useStore
+                    .getState()
+                    .beginHistoryGroup(`description:${item.id}`)
+                }
+                onEditEnd={() =>
+                  useStore.getState().endHistoryGroup(`description:${item.id}`)
+                }
+              />
+            </div>
+            <button
+              className="subtaskToggle"
+              aria-expanded={item.subtasksExpanded}
+              onClick={() =>
+                update({ subtasksExpanded: !item.subtasksExpanded })
               }
-              onEditEnd={() =>
-                useStore.getState().endHistoryGroup(`description:${item.id}`)
-              }
-            />
-          </div>
-        )}
-        {!item.collapsed && (
-          <button
-            className="subtaskToggle"
-            onClick={() => update({ subtasksExpanded: !item.subtasksExpanded })}
-            aria-expanded={item.subtasksExpanded}
-          >
-            {item.subtasksExpanded ? '▾' : '▸'}{' '}
-            <span>
+            >
+              {item.subtasksExpanded ? '▾' : '▸'}{' '}
               {item.subtasks.length
-                ? `${done}/${item.subtasks.length}`
+                ? `${done}/${item.subtasks.length} subtasks`
                 : 'Subtasks'}
-            </span>
-          </button>
-        )}
-      </div>
-      {!item.collapsed && item.subtasksExpanded && (
-        <div className="subtasks" data-no-gesture>
-          {item.subtasks
-            .filter((s) => showDone || s.state !== 'done')
-            .map((sub) => (
-              <div
-                key={sub.id}
-                className={`subtask ${sub.state === 'done' ? 'subtaskDone' : ''}`}
-                data-subtask-id={sub.id}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const from = e.dataTransfer.getData('spatium-subtask');
-                  if (from)
-                    useStore.getState().reorderSubtasks(item.id, from, sub.id);
-                }}
-              >
-                <span
-                  className="subtaskGrip"
-                  aria-label="Drag to reorder subtask"
-                  title="Drag to reorder"
-                  draggable={!window.matchMedia('(pointer: coarse)').matches}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('spatium-subtask', sub.id);
-                  }}
-                  onPointerDown={(e) => beginReorder(e, sub.id)}
-                >
-                  ⠿
-                </span>
-                <StatePicker
-                  interaction
-                  state={sub.state}
-                  label="Subtask state"
-                  onChange={(state) =>
-                    useStore
-                      .getState()
-                      .updateSubtask(item.id, sub.id, { state })
-                  }
-                />
-                <Editable
-                  label="Subtask title"
-                  value={sub.title}
-                  placeholder="Subtask"
-                  editing={newSub === sub.id}
-                  onFinish={() => setNewSub(null)}
-                  onCommit={(title) =>
-                    useStore
-                      .getState()
-                      .updateSubtask(item.id, sub.id, { title })
-                  }
-                  onEnter={add}
-                />
-                <button
-                  className="subtaskDelete"
-                  aria-label="Delete subtask"
-                  onClick={() =>
-                    useStore.getState().deleteSubtask(item.id, sub.id)
-                  }
-                >
-                  ×
+            </button>
+            {item.subtasksExpanded && (
+              <div className="subtasks" data-no-drag>
+                {item.subtasks
+                  .filter((s) => settings.showDone || s.state !== 'done')
+                  .map((sub) => (
+                    <div
+                      key={sub.id}
+                      className={`subtask ${sub.state === 'done' ? 'subtaskDone' : ''}`}
+                      data-subtask-id={sub.id}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        useStore
+                          .getState()
+                          .reorderSubtasks(
+                            item.id,
+                            e.dataTransfer.getData('spatium-subtask'),
+                            sub.id,
+                          );
+                      }}
+                    >
+                      <span
+                        className="subtaskGrip"
+                        aria-label="Drag to reorder subtask"
+                        draggable={
+                          !window.matchMedia('(pointer: coarse)').matches
+                        }
+                        onDragStart={(e) =>
+                          e.dataTransfer.setData('spatium-subtask', sub.id)
+                        }
+                        onPointerDown={(e) => reorder(e, sub.id)}
+                      >
+                        ⠿
+                      </span>
+                      <StatePicker
+                        interaction
+                        label="Subtask state"
+                        state={sub.state}
+                        onChange={(state) =>
+                          useStore
+                            .getState()
+                            .updateSubtask(item.id, sub.id, { state })
+                        }
+                      />
+                      <Editable
+                        label="Subtask title"
+                        value={sub.title}
+                        placeholder="Subtask"
+                        editing={editingId === sub.id}
+                        onFinish={() => useStore.getState().setEditing(null)}
+                        onCommit={(title) =>
+                          useStore
+                            .getState()
+                            .updateSubtask(item.id, sub.id, { title })
+                        }
+                        onEnter={add}
+                      />
+                      <button
+                        className="subtaskDelete"
+                        aria-label="Delete subtask"
+                        onClick={() =>
+                          useStore.getState().deleteSubtask(item.id, sub.id)
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                <button className="addSubtask" onClick={add}>
+                  + Add subtask
                 </button>
               </div>
-            ))}
-          <button className="addSubtask" onClick={add}>
-            + Add subtask
-          </button>
-        </div>
+            )}
+          </>
+        )}
+      </article>
+      {menu && (
+        <TaskActions ids={[item.id]} close={() => setMenu(false)} onAdd={add} />
       )}
     </>
   );

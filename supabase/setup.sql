@@ -27,6 +27,20 @@ create table if not exists public.spatium_documents (
 alter table public.spatium_documents enable row level security;
 revoke all on public.spatium_documents from public, anon, authenticated;
 
+-- Pinned pre-grid recovery copy; never rotated out or exposed through the Data API.
+create table if not exists private.spatium_grid_backup (
+  owner_id uuid primary key references auth.users(id),
+  document jsonb not null,
+  revision bigint not null,
+  saved_at timestamptz not null default now()
+);
+alter table private.spatium_grid_backup enable row level security;
+revoke all on private.spatium_grid_backup from public, anon, authenticated;
+insert into private.spatium_grid_backup(owner_id, document, revision)
+  select owner_id, document, revision from public.spatium_documents
+  where document->>'schemaVersion' in ('1','2','3')
+  on conflict (owner_id) do nothing;
+
 create or replace function public.spatium_is_owner() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists(select 1 from private.spatium_owner where owner_id = (select auth.uid()));
@@ -69,7 +83,7 @@ begin
     or jsonb_typeof(p_document->'items') is distinct from 'object'
     or jsonb_typeof(p_document->'panelOrder') is distinct from 'array'
     or jsonb_typeof(p_document->'settings') is distinct from 'object'
-    or p_document->>'schemaVersion' is distinct from '3' then
+    or p_document->>'schemaVersion' is distinct from '4' then
     raise exception 'Invalid Spatium document' using errcode = '22023';
   end if;
   -- Serialize initial creation as well as updates; two devices cannot both win.
@@ -77,6 +91,11 @@ begin
   select * into existing from public.spatium_documents where owner_id = auth.uid() for update;
   if found then
     if p_expected_revision is distinct from existing.revision then raise exception 'Cloud version changed' using errcode = '40001'; end if;
+    if existing.document->>'schemaVersion' in ('1','2','3') then
+      insert into private.spatium_grid_backup(owner_id, document, revision)
+        values (existing.owner_id, existing.document, existing.revision)
+        on conflict (owner_id) do nothing;
+    end if;
     next_revision := existing.revision + 1;
     update public.spatium_documents set document = p_document, revision = next_revision, updated_at = now() where owner_id = auth.uid();
   else

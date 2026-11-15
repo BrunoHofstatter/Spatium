@@ -36,12 +36,18 @@ try {
   await page.getByRole('link', { name: 'Open Personal' }).click();
   assert.equal(
     await page
-      .locator('.canvas')
-      .evaluate((el) => getComputedStyle(el).position),
-    'relative',
+      .locator('.boardScroll')
+      .evaluate((el) => getComputedStyle(el).overflowY),
+    'auto',
   );
-  await page.getByRole('button', { name: 'Create item', exact: true }).click();
-  await page.getByRole('button', { name: 'Task', exact: true }).click();
+  await page.getByRole('button', { name: 'Add area', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Area title', exact: true })
+    .fill('Offline area');
+  await page
+    .getByRole('textbox', { name: 'Area title', exact: true })
+    .press('Enter');
+  await page.getByRole('button', { name: 'Add task', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Task title', exact: true })
     .fill('Available offline');

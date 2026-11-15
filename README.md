@@ -1,46 +1,39 @@
 # Spatium
 
-A local, spatial task manager built from [PLAN.md](PLAN.md). React 19, TypeScript, Zustand/Immer, IndexedDB and a custom DOM canvas. No backend or account is required.
+A personal task board organized into areas. React, TypeScript, Zustand/Immer, IndexedDB and optional private Supabase sync.
+
+## Using the board
+
+Open a panel to see independent columns of areas. A phone shows roughly two columns; wider screens show more. Scroll sideways or vertically without page snapping. Hold an area to move it within or between columns (drag with a mouse). Drop beyond the last column to create another column. Empty columns stay until you remove them. The + button creates an area.
+
+Tap an area to open it alone. Its tasks fit the screen in two independent columns and scroll vertically. Switch to one column from the header; switching back remembers the tasks' original sides and updated ordering. New tasks start collapsed. Tap to expand, tap expanded text to edit, and use the chevron to collapse. Heights follow content automatically. Hold a task to reorder; moving before the hold scrolls normally. Back, Escape on desktop, or the reserved left-edge rightward swipe returns to the board at its previous position. Browser Back also works.
+
+The + button inside an area creates a task. Task actions offer Important, subtasks, title size, Move to another area, Select more and Delete. Select more supports bulk actions and group reordering. Descriptions edit live as one undo session; Escape, Done editing and blur commit. Enter finishes titles and inserts newlines in descriptions. State controls retain the desktop four-click patterns (left Done, double-left In Progress, right Blank, double-right Delayed) and explicit touch/keyboard choices. Settings offers the alternative visible-choice mode, default title sizes, colors and cloud sync.
+
+Home remains the **my Spatium** board of panel previews. Panels and subtasks have reorder grips; Home also offers Move up/down. Settings returns directly to the originating panel or area.
+
+## Existing writing and the grid upgrade
+
+Version 1?3 data validates and converts automatically to format 4. Task IDs, text, state, Important, subtasks, title sizes, area colors and timestamps remain. Nested areas become separate Parent ? Child areas. Loose tasks go into Unsorted. Existing notes are intentionally omitted, as requested by the owner. Free-canvas coordinates become ordered grid positions.
+
+Before the first converted local save, the original document is pinned at IndexedDB key **spatium-before-grid-v4**. The old cloud document is pinned separately at **spatium-cloud-before-grid-v4** when first read. These copies are not rotated out with recent sync recovery. Invalid or unsupported documents are never replaced by an empty document.
+
+**Existing Supabase installations must rerun the updated [setup.sql](supabase/setup.sql) before using the grid release.** It preserves the live document, pins a private pre-grid cloud backup, and switches writes to format 4 so old cached clients cannot overwrite the new structure. See [cloud setup and upgrade](supabase/README.md). The public browser key is insufficient to apply SQL; use the project SQL Editor or an authorized management token.
+
+Cloud sync still checks whole-document revisions, saves locally before uploading, and pauses for an explicit choice when both devices change. Board positions and the focused-area scroll position stay local to each device. Closing and reopening old PWA sessions loads the updated app. Wait for **Saved to cloud** before switching devices.
+
+## Development and verification
 
 ```sh
 npm ci
 npm run dev
 npm test
 npm run lint
+npm run format:check
 npm run build
 npx playwright install chromium
 npm run test:e2e
 npm run test:production
 ```
 
-Open the development URL at `/Spatium/`. The build in `dist/` uses the same base path and hash routes, so it can be served directly from GitHub Pages.
-
-The Pages workflow runs on pushes to `main` and can also be run manually. Set the repository’s **Settings → Pages → Source** to **GitHub Actions**, then push the implementation. The expected URL is `https://brunohofstatter.github.io/Spatium/`. Deployment and real iPhone/Home Screen acceptance require the owner’s GitHub/device environment; local checks cannot verify those.
-
-On desktop, double-click empty canvas to create a task, or right-click empty space for Task / Area / Note at the pointer. The + menu creates items at the viewport center or inside the selected area. Wheel zooms toward the pointer and middle-drag pans. Drag left to right for full-containment selection, or right to left for crossing selection.
-
-Areas are real groups displayed as colored headings and underlines. Boundaries appear during selection and dragging. Drag a heading to move its group; drag its selected title handle to resize the font. Headings scale gently with zoom. Double middle-click an area heading or use Focus to frame it. There is no background grid or grid snapping.
-
-Use the chevron beside a task's Important star for its title-only collapsed form. A small ring shows subtask completion; expansion restores the subtask view and fits the current content. Double-click a title or note to edit, or click a description. Editors keep the same typography. Escape and clicking away save the edit; Enter finishes a title and inserts a line break in descriptions and notes.
-
-New tasks start collapsed. Expanded height fits the description and open subtasks automatically; drag the left/right handles to change width. Growing or shrinking a task pushes/pulls following tasks in the same parent and aligned column while preserving their gaps. Description editing and its column movement undo together. Temporary alignment guides help snap task edges and centers during dragging.
-
-Settings → Task titles changes the shared default title size. Right-click selected tasks for a bulk font-size override or **Use default size**. Settings is wider and offers a direct Back link to the panel it was opened from; Escape finishes a focused field first, then returns to that panel.
-
-Settings → Task state control switches between four visible state choices and four click patterns. Click patterns are the initial desktop mode: left = Done, double-left = In Progress, right = Blank, double-right = Delayed. Single clicks wait briefly to distinguish doubles. Keyboard activation and touch open the explicit state picker.
-
-Home is the **my Spatium** board: panel headings above compact previews, three desktop columns, drag-to-reorder and a floating + for creation.
-
-On touch screens, the first tap on an item's text selects it; tap again or use Edit to write. Done editing commits and dismisses the editor. Inline editors temporarily frame text at a readable scale and follow the caret above the keyboard; automatic framing returns afterward unless you navigated manually. Real iPhone keyboard behavior still needs device acceptance.
-
-The bottom bar prioritizes State, Edit, Expand/Collapse and More (plus Focus for areas). More → Select more enables tap-to-toggle selection with a visible count; Finish selection retains the group for dragging and bulk actions. More → Title size has −/+ controls for tasks or an area heading, with Use default size for tasks. Touch state choices remain explicit; desktop four-click patterns do not apply.
-
-Selected resize handles compensate for zoom, within a bounded size. Area Focus reserves space above the bottom dock, and More → Focus task brings its heading to a readable width. Creating inside a selected area chooses visible space and avoids occupied positions where possible. Drag the grip beside a panel or subtask to reorder with a moving preview, insertion marker and edge scrolling/panning. Home panel menus also offer Move up/down. Card swipes remain unused so dragging stays immediate; subtask swipes are deferred.
-
-Changes save automatically on this browser/device. Undo/redo keeps 200 document actions in memory; navigation, highlights and Done visibility are excluded. Closing the tab clears undo history. Installing the PWA and requesting persistent storage help retention, but clearing browser site data still removes the local document. An unreadable or newer-version document is left intact rather than replaced.
-
-Optional private phone/PC sync is available under **Settings → Cloud sync**. The Supabase project connection is configured; follow [the one-time hosted setup](supabase/README.md) to install the SQL and create your login. The app stays usable locally while signed out or offline. On first connection, existing work is uploaded only after your explicit choice. A fresh device with no existing work can pull the cloud copy automatically. Whole-document version checks prevent silent overwrites when both devices change. Conflict choices retain recent local recovery snapshots, and pan/zoom stays device-local. Status indicators show whether changes have reached the cloud. Finish on one device and wait for **Saved to cloud** before switching for the simplest experience.
-
-Use one tab for editing. If another tab saves a newer document, a stale tab stops saving and displays a message instead of overwriting that work. Its unsaved edits stay in memory while it remains open; tabs do not merge changes.
-
-Production builds include the manifest, PNG icons and an offline service worker. `test:production` checks the built app’s CSS, IndexedDB reload and offline service worker with headless Chromium after `npm run build`. Icons can be regenerated on Windows with `powershell -File scripts/generate-icons.ps1`.
+Serve at /Spatium/. Hash routes work on GitHub Pages. Pushes to main run the Pages build/deploy workflow. Production tests check the built CSS, routes, IndexedDB reload and offline service worker. Browser tests cover the grid on desktop and portrait Chromium; they do not replace real iPhone Safari/Home Screen acceptance.

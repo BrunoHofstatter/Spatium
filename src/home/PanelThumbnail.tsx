@@ -1,102 +1,99 @@
-import { useMemo } from 'react';
-import { useStore } from '../model/store';
-import {
-  absolutePosition,
-  displayHeight,
-  isVisible,
-  itemBounds,
-} from '../model/geometry';
+import { useStore, areaTasks, ordered } from '../model/store';
 export function PanelThumbnail({ panelId }: { panelId: string }) {
-  const doc = useStore((s) => s.doc);
-  const shapes = useMemo(
-    () =>
-      Object.values(doc.items)
-        .filter((i) => i.panelId === panelId && isVisible(doc, i))
-        .map((item) => ({
-          item,
-          ...absolutePosition(doc.items, item.id),
-          height: displayHeight(
-            item,
-            doc.settings.showDone,
-            doc.settings.taskTitleSize,
-          ),
-        }))
-        .sort((a, b) => {
-          const depth = (id: string): number => {
-            const p = doc.items[id].parentId;
-            return p ? 1 + depth(p) : 0;
-          };
-          return depth(a.item.id) - depth(b.item.id) || a.item.z - b.item.z;
-        }),
-    [doc, panelId],
+  const doc = useStore((s) => s.doc),
+    panel = doc.panels[panelId];
+  const columns = panel.columns.map((columnId) =>
+    ordered(
+      Object.values(doc.items).filter(
+        (i) =>
+          i.type === 'area' && i.panelId === panelId && i.columnId === columnId,
+      ),
+    ),
   );
-  const left = shapes.length ? Math.min(...shapes.map((s) => s.x)) - 40 : 0,
-    top = shapes.length
-      ? Math.min(...shapes.map((s) => itemBounds(doc, s.item).y)) - 40
-      : 0;
-  const width = shapes.length
-      ? Math.max(...shapes.map((s) => s.x + s.item.w)) - left + 40
-      : 400,
-    height = shapes.length
-      ? Math.max(...shapes.map((s) => s.y + s.height)) - top + 40
-      : 220;
+  const areaHeight = (id: string) => {
+    const area = doc.items[id],
+      tasks = areaTasks(doc, id, true);
+    return (
+      38 +
+      Math.max(
+        20,
+        (area.type === 'area' && area.taskColumns === 2
+          ? Math.max(
+              tasks.filter((t) => t.column === 0).length,
+              tasks.filter((t) => t.column === 1).length,
+            )
+          : tasks.length) * 16,
+      )
+    );
+  };
+  const heights = columns.map((areas) =>
+    areas.reduce((sum, area) => sum + areaHeight(area.id), 0),
+  );
   return (
     <svg
       className="thumbnail"
-      viewBox={`${left} ${top} ${width} ${height}`}
+      viewBox={`0 0 ${Math.max(2, columns.length) * 180} ${Math.max(120, ...heights)}`}
       role="img"
       aria-label="Panel mini-map"
     >
-      <rect x={left} y={top} width={width} height={height} fill="none" />
-      {shapes.map(({ item, x, y, height }) =>
-        item.type === 'area' ? (
-          <g key={item.id}>
-            <line
-              x1={x}
-              y1={y - 8}
-              x2={x + item.w}
-              y2={y - 8}
-              stroke={item.color || '#7770bd'}
-              strokeWidth="4"
-            />
-            <text
-              x={x}
-              y={y - 20}
-              fontSize={item.fontSize}
-              fill={item.color || '#7770bd'}
-            >
-              {item.title}
-            </text>
+      {columns.map((areas, column) => {
+        let y = 8;
+        return (
+          <g key={column}>
+            {areas.map((area) => {
+              if (area.type !== 'area') return null;
+              const top = y,
+                tasks = areaTasks(doc, area.id, true);
+              y += areaHeight(area.id);
+              return (
+                <g key={area.id}>
+                  <text
+                    x={column * 180 + 8}
+                    y={top + 14}
+                    fontSize="13"
+                    fill={area.color ?? '#7770bd'}
+                  >
+                    {area.title}
+                  </text>
+                  <line
+                    x1={column * 180 + 8}
+                    x2={column * 180 + 164}
+                    y1={top + 21}
+                    y2={top + 21}
+                    stroke={area.color ?? '#7770bd'}
+                    strokeWidth="2"
+                  />
+                  {tasks.map((task, index) => (
+                    <rect
+                      key={task.id}
+                      x={
+                        column * 180 +
+                        8 +
+                        (area.taskColumns === 2 ? task.column * 80 : 0)
+                      }
+                      y={
+                        top +
+                        28 +
+                        (area.taskColumns === 2
+                          ? tasks
+                              .filter((t) => t.column === task.column)
+                              .indexOf(task)
+                          : index) *
+                          16
+                      }
+                      width={area.taskColumns === 2 ? 74 : 154}
+                      height="11"
+                      rx="3"
+                      fill={doc.settings.stateColors[task.state]}
+                      fillOpacity=".4"
+                    />
+                  ))}
+                </g>
+              );
+            })}
           </g>
-        ) : item.type === 'task' ? (
-          <rect
-            key={item.id}
-            x={x}
-            y={y}
-            width={item.w}
-            height={height}
-            rx="8"
-            fill={doc.settings.stateColors[item.state]}
-            fillOpacity=".3"
-            stroke={doc.settings.stateColors[item.state]}
-            strokeOpacity=".5"
-          />
-        ) : (
-          <g key={item.id} opacity=".45">
-            {[0, 1, 2].map((n) => (
-              <rect
-                key={n}
-                x={x}
-                y={y + n * 12}
-                width={item.w * (n === 2 ? 0.6 : 0.9)}
-                height="3"
-                rx="1"
-                fill="#8c92a4"
-              />
-            ))}
-          </g>
-        ),
-      )}
+        );
+      })}
     </svg>
   );
 }

@@ -1,5 +1,21 @@
 # Spatium: Implementation Plan
 
+## Accepted grid redesign ? 2026-11-15
+
+This revision supersedes the free-canvas layout and its dependent interactions below.
+
+- Panels contain manually arranged, independent columns of top-level areas. About two fixed-width columns are visible on a phone, more on desktop. Native horizontal/vertical scrolling has no paging or canvas zoom.
+- Areas retain their chosen column and order. Their height follows a miniature of all visible tasks, including expanded content. No automatic cross-column balancing. Hold an area to drag; mouse drag starts after a movement threshold. Dropping beyond the last column creates a column. There is no Add column command. Empty columns remain until explicitly removed, with at least one remaining.
+- Tap an area to open it alone with a smooth transition (reduced-motion users get an immediate change). Back, desktop Escape and a reserved left-edge rightward swipe restore the board position. Area routes participate in browser history; direct links have a safe in-app Back fallback.
+- Focused areas fit screen width and scroll vertically. Task width/height and flow are automatic. Two independently stacked task columns are the default; expansion affects only the same column. Manual canvas sizing, positional attachment and alignment snapping are retired.
+- New tasks start collapsed. A tap expands; expanded title/description text edits inline; a chevron collapses. Hold to reorder. Native scrolling wins when movement begins before the hold. Subtasks keep grip reordering. Desktop state patterns and the explicit touch state picker remain.
+- An area can switch to one task column without losing per-task left/right membership. The shared reading order updates when reordered, and switching back restores the remembered sides.
+- Select more toggles task membership and supports bulk sizing, moving/deleting and group reorder. Move to transfers tasks to another area. Preserve task states, descriptions, Important, subtasks, colors, title sizes, filters, grouped undo, offline storage and sync.
+- Version 1?3 documents validate before deterministic conversion to version 4. Preserve task/area IDs, content and timestamps. Nested areas become Parent ? Child board areas. Loose tasks go into a deterministically named Unsorted area per panel. Notes are omitted from the new document at the owner's request.
+- Before writing version 4, pin the untouched local document; pin the original cloud copy as well. Supabase setup also creates a private permanent pre-grid backup and rejects version-3 writes from older clients. Migrate sync fingerprints deterministically to avoid false conflicts. Board/focused scroll positions stay device-local.
+
+---
+
 ## Accepted mobile revision — 2026-11-15
 
 These later owner-approved mobile adaptations take precedence over conflicting interaction details below:

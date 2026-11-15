@@ -189,7 +189,8 @@ test('first upload, a second device, local views, conflicts, recovery and offlin
       .getByRole('link', { name: 'Back to panel Newer phone changes' })
       .click();
     await expect(page.locator('.panelTitle')).toHaveText('Newer phone changes');
-    await expect(page.locator('.canvasHint b')).toHaveText('200%');
+    await expect(page.locator('.panelBoard')).toBeVisible();
+    await expect(page.locator('.canvas')).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {
     await second.close();

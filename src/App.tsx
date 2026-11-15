@@ -6,9 +6,11 @@ import { PanelScreen } from './panel/PanelScreen';
 import { SettingsScreen } from './settings/SettingsScreen';
 import { deleteSelection } from './canvas/SelectionToolbar';
 import styles from './styles/App.module.css';
+import './styles/grid.css';
 import { TouchEditing } from './canvas/TouchEditing';
 import { startCloudSync } from './sync/runtime';
 import { useSync } from './sync/state';
+import { flushSync } from 'react-dom';
 let boot: Promise<() => void> | undefined;
 export function App() {
   const [hash, setHash] = useState(window.location.hash),
@@ -32,11 +34,29 @@ export function App() {
           : 'The saved document could not be loaded.',
       ),
     );
+    let previousHash = window.location.hash;
     const change = () => {
-      useStore.getState().select([]);
-      useStore.getState().setEditing(null);
-      useStore.getState().setSelectionMode(false);
-      setHash(window.location.hash);
+      const next = window.location.hash;
+      const animate =
+        next.includes('/area/') || previousHash.includes('/area/');
+      previousHash = next;
+      const update = () => {
+        useStore.getState().select([]);
+        useStore.getState().setEditing(null);
+        useStore.getState().setSelectionMode(false);
+        setHash(next);
+      };
+      if (
+        animate &&
+        document.startViewTransition &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        const transition = document.startViewTransition(() =>
+          flushSync(update),
+        );
+        // A newer navigation can legitimately interrupt a cosmetic transition.
+        void transition.finished.catch(() => {});
+      } else update();
     };
     window.addEventListener('hashchange', change);
     return () => window.removeEventListener('hashchange', change);
@@ -101,7 +121,7 @@ export function App() {
         <p>Opening your space…</p>
       </main>
     );
-  const match = /^#\/panel\/([^/]+)$/.exec(hash);
+  const match = /^#\/panel\/([\w-]+)(?:\/area\/([\w-]+))?$/.exec(hash);
   const id = match?.[1];
   return (
     <div
@@ -123,7 +143,7 @@ export function App() {
         {hash.split('?')[0] === '#/settings' ? (
           <SettingsScreen />
         ) : id && panels[id] ? (
-          <PanelScreen panelId={id} />
+          <PanelScreen panelId={id} areaId={match?.[2]} />
         ) : (
           <HomeScreen />
         )}

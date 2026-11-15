@@ -6,39 +6,36 @@ import {
   type Doc,
   type Highlight,
   type Item,
-  type Point,
   type Settings,
   type Subtask,
+  type TaskItem,
   type Viewport,
 } from './types';
-import {
-  absolutePosition,
-  areaAt,
-  descendants,
-  growAncestors,
-  INSET,
-  isVisible,
-  MIN_SIZE,
-  MIN_AREA_FONT,
-  MAX_AREA_FONT,
-  reparent,
-  rootsOfSelection,
-  TOP,
-} from './geometry';
 import { HISTORY_LIMIT, preserveView } from './history';
-import { layoutTasks, MIN_TASK_FONT, MAX_TASK_FONT } from './taskLayout';
-import { snapMovement } from './snapping';
-
+export const ordered = <T extends { order: number; id: string }>(items: T[]) =>
+  items.sort(
+    (a, b) => a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
+export const areaTasks = (doc: Doc, id: string, visible = false) =>
+  ordered(
+    Object.values(doc.items).filter(
+      (i): i is TaskItem =>
+        i.type === 'task' &&
+        i.parentId === id &&
+        (!visible || doc.settings.showDone || i.state !== 'done'),
+    ),
+  );
 export function createDocument(): Doc {
-  const id = nanoid();
-  const now = Date.now();
+  const id = nanoid(),
+    now = Date.now();
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     panels: {
       [id]: {
         id,
         title: 'Personal',
-        viewport: { x: 80, y: 80, zoom: 1 },
+        columns: [`${id}-column-0`, `${id}-column-1`],
+        viewport: { x: 0, y: 0, zoom: 1 },
         createdAt: now,
         updatedAt: now,
       },
@@ -59,14 +56,14 @@ interface Store {
   past: Doc[];
   future: Doc[];
   historyGroup: { key: string; recorded: boolean } | null;
-  beginHistoryGroup(key: string): void;
-  endHistoryGroup(key: string): void;
   hydrate(doc: Doc): void;
   transact(edit: (doc: Doc) => void, record?: boolean): void;
+  beginHistoryGroup(key: string): void;
+  endHistoryGroup(key: string): void;
   undo(): void;
   redo(): void;
   select(ids: string[]): void;
-  setSelectionMode(enabled: boolean): void;
+  setSelectionMode(value: boolean): void;
   setEditing(id: string | null): void;
   toggleHighlight(value: Highlight): void;
   createPanel(title: string): string;
@@ -75,25 +72,19 @@ interface Store {
   reorderPanels(ids: string[]): void;
   setViewport(id: string, view: Viewport): void;
   setSettings(settings: Partial<Settings>, record?: boolean): void;
-  createItem(
-    type: Item['type'],
-    panelId: string,
-    point: Point,
-    parentId?: string | null,
-  ): string;
+  createArea(panelId: string, columnId?: string): string;
+  createTask(areaId: string, column?: 0 | 1): string;
   updateItem(id: string, patch: Partial<Item>): void;
-  setTaskFonts(ids: string[], fontSize: number | null): void;
-  moveItems(
-    ids: string[],
-    delta: Point,
-    pointer: Point,
-    snapTolerance?: number,
-  ): void;
-  resizeItem(
-    id: string,
-    rect: { x: number; y: number; w: number; h: number },
-  ): void;
+  setTaskFonts(ids: string[], size: number | null): void;
   deleteItems(ids: string[]): void;
+  moveArea(id: string, columnId: string | 'new', before?: string): void;
+  removeColumn(panelId: string, columnId: string): void;
+  moveTasks(
+    ids: string[],
+    areaId: string,
+    column?: 0 | 1,
+    before?: string,
+  ): void;
   addSubtask(id: string): string;
   updateSubtask(id: string, subId: string, patch: Partial<Subtask>): void;
   deleteSubtask(id: string, subId: string): void;
@@ -110,75 +101,54 @@ export const useStore = create<Store>((set, get) => ({
   past: [],
   future: [],
   historyGroup: null,
-  beginHistoryGroup: (key) => set({ historyGroup: { key, recorded: false } }),
-  endHistoryGroup: (key) => {
-    if (get().historyGroup?.key === key) set({ historyGroup: null });
-  },
   hydrate: (doc) =>
     set({
       doc,
       ready: true,
-      past: [],
-      future: [],
+      error: null,
       selection: [],
       selectionMode: false,
       editingId: null,
+      past: [],
+      future: [],
       historyGroup: null,
-      error: null,
     }),
+  beginHistoryGroup: (key) => set({ historyGroup: { key, recorded: false } }),
+  endHistoryGroup: (key) => {
+    if (get().historyGroup?.key === key) set({ historyGroup: null });
+  },
   transact: (edit, record = true) => {
-    const current = get();
-    let next = produce(current.doc, edit);
-    if (
-      record &&
-      (next.items !== current.doc.items ||
-        next.settings.taskTitleSize !== current.doc.settings.taskTitleSize)
-    ) {
-      const edited = next;
-      next = produce(edited, (draft) => {
-        for (const id of layoutTasks(draft, current.doc, edited))
-          growAncestors(draft, id);
+    const s = get();
+    let next = produce(s.doc, edit);
+    if (next === s.doc) return;
+    if (next.items !== s.doc.items) {
+      const panels = new Set(
+        Object.keys({ ...s.doc.items, ...next.items })
+          .filter((id) => s.doc.items[id] !== next.items[id])
+          .map((id) => (next.items[id] ?? s.doc.items[id]).panelId),
+      );
+      next = produce(next, (d) => {
+        for (const id of panels)
+          if (d.panels[id]) d.panels[id].updatedAt = Date.now();
       });
     }
-    if (next.items !== current.doc.items) {
-      const changedPanels = new Set<string>();
-      for (const id of new Set([
-        ...Object.keys(current.doc.items),
-        ...Object.keys(next.items),
-      ])) {
-        if (next.items[id] !== current.doc.items[id])
-          changedPanels.add((next.items[id] ?? current.doc.items[id]).panelId);
-      }
-      next = produce(next, (draft) => {
-        for (const id of changedPanels)
-          if (draft.panels[id]) draft.panels[id].updatedAt = Date.now();
-      });
-    }
-    if (next === current.doc) return;
+    const visible = (id: string) =>
+      next.items[id] &&
+      (next.items[id].type !== 'task' ||
+        next.settings.showDone ||
+        next.items[id].state !== 'done');
     set({
       doc: next,
-      ...(next.items !== current.doc.items ||
-      next.settings !== current.doc.settings
-        ? {
-            selection: current.selection.filter(
-              (id) => next.items[id] && isVisible(next, next.items[id]),
-            ),
-            editingId:
-              current.editingId &&
-              next.items[current.editingId] &&
-              isVisible(next, next.items[current.editingId])
-                ? current.editingId
-                : null,
-          }
-        : {}),
+      selection: s.selection.filter(visible),
+      editingId: s.editingId && visible(s.editingId) ? s.editingId : null,
       ...(record
         ? {
-            past: current.historyGroup?.recorded
-              ? current.past
-              : [...current.past, current.doc].slice(-HISTORY_LIMIT),
+            past: s.historyGroup?.recorded
+              ? s.past
+              : [...s.past, s.doc].slice(-HISTORY_LIMIT),
             future: [],
-            historyGroup: current.historyGroup
-              ? { ...current.historyGroup, recorded: true }
+            historyGroup: s.historyGroup
+              ? { ...s.historyGroup, recorded: true }
               : null,
           }
         : {}),
@@ -186,10 +156,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   undo: () => {
     const s = get(),
-      previous = s.past.at(-1);
-    if (previous)
+      doc = s.past.at(-1);
+    if (doc)
       set({
-        doc: preserveView(previous, s.doc),
+        doc: preserveView(doc, s.doc),
         past: s.past.slice(0, -1),
         future: [...s.future, s.doc],
         selection: [],
@@ -199,10 +169,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   redo: () => {
     const s = get(),
-      next = s.future.at(-1);
-    if (next)
+      doc = s.future.at(-1);
+    if (doc)
       set({
-        doc: preserveView(next, s.doc),
+        doc: preserveView(doc, s.doc),
         past: [...s.past, s.doc],
         future: s.future.slice(0, -1),
         selection: [],
@@ -210,324 +180,313 @@ export const useStore = create<Store>((set, get) => ({
         historyGroup: null,
       });
   },
-  select: (ids) => {
-    set({ selection: ids });
-    get().transact((doc) => {
-      for (const id of rootsOfSelection(doc.items, ids)) {
-        const item = doc.items[id];
-        const max = Math.max(
-          0,
-          ...Object.values(doc.items)
-            .filter(
-              (i) => i.parentId === item.parentId && i.panelId === item.panelId,
-            )
-            .map((i) => i.z),
-        );
-        if (item.z < max) {
-          item.z = max + 1;
-          item.updatedAt = Date.now();
-        }
-      }
-    }, false);
-  },
-  setEditing: (editingId) => set({ editingId }),
+  select: (selection) =>
+    set({ selection: selection.filter((id) => !!get().doc.items[id]) }),
   setSelectionMode: (selectionMode) => set({ selectionMode, editingId: null }),
-  toggleHighlight: (value) =>
+  setEditing: (editingId) => set({ editingId }),
+  toggleHighlight: (h) =>
     set((s) => ({
-      highlights: s.highlights.includes(value)
-        ? s.highlights.filter((h) => h !== value)
-        : [...s.highlights, value],
+      highlights: s.highlights.includes(h)
+        ? s.highlights.filter((i) => i !== h)
+        : [...s.highlights, h],
     })),
   createPanel: (title) => {
-    const id = nanoid();
-    get().transact((doc) => {
-      const now = Date.now();
-      doc.panels[id] = {
+    const id = nanoid(),
+      now = Date.now();
+    get().transact((d) => {
+      d.panels[id] = {
         id,
-        title: title.trim() || 'Untitled panel',
-        viewport: { x: 80, y: 80, zoom: 1 },
+        title,
+        columns: [`${id}-column-0`, `${id}-column-1`],
+        viewport: { x: 0, y: 0, zoom: 1 },
         createdAt: now,
         updatedAt: now,
       };
-      doc.panelOrder.push(id);
+      d.panelOrder.push(id);
     });
     return id;
   },
   renamePanel: (id, title) =>
-    get().transact((doc) => {
-      if (
-        doc.panels[id] &&
-        title.trim() &&
-        doc.panels[id].title !== title.trim()
-      ) {
-        doc.panels[id].title = title.trim();
-        doc.panels[id].updatedAt = Date.now();
+    get().transact((d) => {
+      if (d.panels[id] && title.trim() && d.panels[id].title !== title.trim()) {
+        d.panels[id].title = title.trim();
+        d.panels[id].updatedAt = Date.now();
       }
     }),
   deletePanel: (id) =>
-    get().transact((doc) => {
-      delete doc.panels[id];
-      doc.panelOrder = doc.panelOrder.filter((p) => p !== id);
-      for (const item of Object.values(doc.items))
-        if (item.panelId === id) delete doc.items[item.id];
+    get().transact((d) => {
+      delete d.panels[id];
+      d.panelOrder = d.panelOrder.filter((p) => p !== id);
+      for (const item of Object.values(d.items))
+        if (item.panelId === id) delete d.items[item.id];
     }),
   reorderPanels: (ids) =>
-    get().transact((doc) => {
+    get().transact((d) => {
       if (
-        ids.length === doc.panelOrder.length &&
+        ids.length === d.panelOrder.length &&
         new Set(ids).size === ids.length &&
-        ids.every((id) => doc.panels[id])
+        ids.every((id) => d.panels[id])
       )
-        doc.panelOrder = ids;
+        d.panelOrder = ids;
     }),
-  setViewport: (id, view) =>
-    get().transact((doc) => {
-      if (doc.panels[id]) doc.panels[id].viewport = view;
-    }, false),
-  setSettings: (settings, record = true) => {
-    get().transact((doc) => {
-      Object.assign(doc.settings, settings);
-      doc.settings.taskTitleSize = Math.max(
-        MIN_TASK_FONT,
-        Math.min(MAX_TASK_FONT, doc.settings.taskTitleSize),
-      );
-    }, record);
-    if (settings.showDone === false)
-      set((s) => ({
-        highlights: s.highlights.filter((h) => h !== 'done'),
-        selection: s.selection.filter((id) => {
-          const i = s.doc.items[id];
-          return i && (i.type !== 'task' || i.state !== 'done');
-        }),
-      }));
+  setViewport: (id, viewport) => {
+    const previous = get().doc.panels[id]?.viewport;
+    if (
+      previous &&
+      previous.x === viewport.x &&
+      previous.y === viewport.y &&
+      previous.zoom === viewport.zoom
+    )
+      return;
+    get().transact((d) => {
+      if (d.panels[id]) d.panels[id].viewport = viewport;
+    }, false);
   },
-  createItem: (type, panelId, point, parentId) => {
-    const id = nanoid();
-    get().transact((doc) => {
-      if (!doc.panels[panelId]) return;
-      const parent =
-        parentId === undefined ? areaAt(doc, panelId, point) : parentId;
-      const origin = parent
-        ? absolutePosition(doc.items, parent)
-        : { x: -INSET, y: -TOP };
-      const now = Date.now();
-      const base = {
+  setSettings: (settings, record = true) =>
+    get().transact((d) => {
+      Object.assign(d.settings, settings);
+      d.settings.taskTitleSize = Math.max(
+        12,
+        Math.min(32, d.settings.taskTitleSize),
+      );
+    }, record),
+  createArea: (panelId, columnId) => {
+    const id = nanoid(),
+      now = Date.now(),
+      s = get(),
+      panel = s.doc.panels[panelId];
+    if (!panel) throw new Error('Panel does not exist.');
+    const column =
+      columnId && panel.columns.includes(columnId)
+        ? columnId
+        : panel.columns[0];
+    get().transact((d) => {
+      d.items[id] = {
         id,
+        type: 'area',
+        parentId: null,
         panelId,
-        parentId: parent,
-        x: point.x - origin.x - INSET,
-        y: point.y - origin.y - TOP,
-        w: type === 'area' ? 420 : type === 'task' ? 260 : 220,
-        h: type === 'area' ? 280 : type === 'task' ? 140 : 100,
-        z:
+        title: 'Untitled area',
+        columnId: column,
+        order:
           Math.max(
-            0,
-            ...Object.values(doc.items)
-              .filter((i) => i.panelId === panelId && i.parentId === parent)
-              .map((i) => i.z),
+            -1,
+            ...Object.values(d.items)
+              .filter(
+                (i) =>
+                  i.type === 'area' &&
+                  i.panelId === panelId &&
+                  i.columnId === column,
+              )
+              .map((i) => i.order),
           ) + 1,
+        taskColumns: 2,
+        color: null,
+        fontSize: 24,
         createdAt: now,
         updatedAt: now,
       };
-      doc.items[id] =
-        type === 'task'
-          ? {
-              ...base,
-              type,
-              title: 'Untitled task',
-              description: '',
-              state: 'blank',
-              important: false,
-              subtasks: [],
-              subtasksExpanded: false,
-              collapsed: true,
-              titleFontSize: null,
-            }
-          : type === 'area'
-            ? {
-                ...base,
-                type,
-                title: 'Untitled area',
-                color: null,
-                collapsed: false,
-                fontSize: 24,
-              }
-            : { ...base, type, text: '' };
-      growAncestors(doc, id);
+    });
+    set({ editingId: id });
+    return id;
+  },
+  createTask: (areaId, column) => {
+    const s = get(),
+      area = s.doc.items[areaId];
+    if (area?.type !== 'area') throw new Error('Choose an area first.');
+    const tasks = areaTasks(s.doc, areaId),
+      id = nanoid(),
+      now = Date.now();
+    const side =
+      column ??
+      (area.taskColumns === 1
+        ? 0
+        : tasks.filter((t) => t.column === 0).length <=
+            tasks.filter((t) => t.column === 1).length
+          ? 0
+          : 1);
+    get().transact((d) => {
+      d.items[id] = {
+        id,
+        type: 'task',
+        panelId: area.panelId,
+        parentId: areaId,
+        column: side,
+        order: Math.max(-1, ...tasks.map((t) => t.order)) + 1,
+        title: 'Untitled task',
+        description: '',
+        state: 'blank',
+        important: false,
+        subtasks: [],
+        subtasksExpanded: false,
+        collapsed: true,
+        titleFontSize: null,
+        createdAt: now,
+        updatedAt: now,
+      };
     });
     set({ selection: [id], editingId: id });
     return id;
   },
   updateItem: (id, patch) =>
-    get().transact((doc) => {
-      const item = doc.items[id];
+    get().transact((d) => {
+      const item = d.items[id];
       if (!item) return;
-      // Identity and geometry are updated only by their dedicated actions.
       const allowed =
-        item.type === 'task'
-          ? [
+        item.type === 'area'
+          ? ['title', 'color', 'fontSize', 'taskColumns']
+          : [
               'title',
               'description',
               'state',
               'important',
-              'subtasksExpanded',
               'collapsed',
+              'subtasksExpanded',
               'titleFontSize',
-            ]
-          : item.type === 'area'
-            ? ['title', 'color', 'collapsed', 'fontSize']
-            : ['text'];
-      const updates = Object.fromEntries(
-        Object.entries(patch).filter(
-          ([key, value]) =>
-            allowed.includes(key) &&
-            value !== (item as unknown as Record<string, unknown>)[key],
-        ),
-      );
-      if (!Object.keys(updates).length) return;
-      Object.assign(item, updates, { updatedAt: Date.now() });
+            ];
+      let changed = false;
+      for (const key of allowed) {
+        if (
+          key in patch &&
+          (item as unknown as Record<string, unknown>)[key] !==
+            (patch as Record<string, unknown>)[key]
+        ) {
+          (item as unknown as Record<string, unknown>)[key] = (
+            patch as Record<string, unknown>
+          )[key];
+          changed = true;
+        }
+      }
       if (item.type === 'area')
-        item.fontSize = Math.max(
-          MIN_AREA_FONT,
-          Math.min(MAX_AREA_FONT, item.fontSize),
-        );
-      growAncestors(doc, id);
+        item.fontSize = Math.max(14, Math.min(72, item.fontSize));
+      if (changed) item.updatedAt = Date.now();
     }),
-  setTaskFonts: (ids, fontSize) =>
-    get().transact((doc) => {
+  setTaskFonts: (ids, size) =>
+    get().transact((d) => {
       for (const id of ids) {
-        const item = doc.items[id];
+        const item = d.items[id];
         if (item?.type === 'task') {
           item.titleFontSize =
-            fontSize === null
-              ? null
-              : Math.max(MIN_TASK_FONT, Math.min(MAX_TASK_FONT, fontSize));
+            size === null ? null : Math.max(12, Math.min(32, size));
           item.updatedAt = Date.now();
         }
       }
     }),
-  moveItems: (ids, delta, pointer, snapTolerance = 6) =>
-    get().transact((doc) => {
-      const roots = rootsOfSelection(doc.items, ids);
-      if (!roots.length) return;
-      const snapped = snapMovement(
-        doc,
-        roots,
-        delta,
-        doc.panels[doc.items[roots[0]].panelId].viewport.zoom,
-        snapTolerance,
+  deleteItems: (ids) =>
+    get().transact((d) => {
+      const all = new Set(ids);
+      for (const item of Object.values(d.items))
+        if (item.type === 'task' && all.has(item.parentId)) all.add(item.id);
+      for (const id of all) delete d.items[id];
+    }),
+  moveArea: (id, destination, before) =>
+    get().transact((d) => {
+      const item = d.items[id];
+      if (item?.type !== 'area' || before === id) return;
+      const panel = d.panels[item.panelId];
+      let columnId = destination;
+      if (destination === 'new') {
+        columnId = nanoid();
+        panel.columns.push(columnId);
+      }
+      if (!panel.columns.includes(columnId)) return;
+      const list = ordered(
+        Object.values(d.items).filter(
+          (i) =>
+            i.type === 'area' &&
+            i.panelId === item.panelId &&
+            i.columnId === columnId &&
+            i.id !== id,
+        ),
       );
-      const dx = snapped.delta.x,
-        dy = snapped.delta.y;
-      const excluded = new Set(
-        roots.flatMap((id) => [id, ...descendants(doc.items, id)]),
-      );
-      for (const id of roots) {
-        const i = doc.items[id];
-        i.x += dx;
-        i.y += dy;
+      const at = before ? list.findIndex((i) => i.id === before) : -1;
+      list.splice(at < 0 ? list.length : at, 0, item);
+      item.columnId = columnId;
+      list.forEach((i, n) => {
+        i.order = n;
         i.updatedAt = Date.now();
-      }
-      // Choose all destinations before growing or reparenting changes any hit-test geometry.
-      const anchor = absolutePosition(doc.items, roots[0]);
-      const parents = roots.map((id) => {
-        const position = absolutePosition(doc.items, id);
-        return areaAt(
-          doc,
-          doc.items[id].panelId,
-          {
-            x: pointer.x + position.x - anchor.x,
-            y: pointer.y + position.y - anchor.y,
-          },
-          excluded,
-        );
       });
-      roots.forEach((id, i) => reparent(doc, id, parents[i]));
-      roots.forEach((id) => growAncestors(doc, id));
     }),
-  resizeItem: (id, rect) =>
-    get().transact((doc) => {
-      const item = doc.items[id];
-      if (!item) return;
-      const previous = { x: item.x, y: item.y };
-      item.x = rect.x;
-      item.y = rect.y;
-      item.w = Math.max(MIN_SIZE[item.type].w, rect.w);
-      if (item.type !== 'task')
-        item.h = Math.max(MIN_SIZE[item.type].h, rect.h);
-      item.updatedAt = Date.now();
-      if (item.type === 'area') {
-        for (const child of Object.values(doc.items))
-          if (child.parentId === id) {
-            child.x += previous.x - item.x;
-            child.y += previous.y - item.y;
-            child.updatedAt = Date.now();
-          }
-        for (const child of Object.values(doc.items))
-          if (child.parentId === id) growAncestors(doc, child.id);
+  removeColumn: (panelId, columnId) =>
+    get().transact((d) => {
+      const p = d.panels[panelId];
+      if (
+        p &&
+        p.columns.length > 1 &&
+        !Object.values(d.items).some(
+          (i) =>
+            i.type === 'area' &&
+            i.panelId === panelId &&
+            i.columnId === columnId,
+        )
+      ) {
+        p.columns = p.columns.filter((c) => c !== columnId);
+        p.updatedAt = Date.now();
       }
-      growAncestors(doc, id);
     }),
-  deleteItems: (ids) => {
-    get().transact((doc) => {
-      for (const id of rootsOfSelection(doc.items, ids))
-        for (const child of [id, ...descendants(doc.items, id)])
-          delete doc.items[child];
-    });
-    set({ selection: [], editingId: null });
-  },
+  moveTasks: (ids, areaId, column, before) =>
+    get().transact((d) => {
+      const area = d.items[areaId];
+      if (area?.type !== 'area' || (before && ids.includes(before))) return;
+      const moved = ids
+        .map((id) => d.items[id])
+        .filter((i): i is TaskItem => i?.type === 'task');
+      const list = areaTasks(d, areaId).filter((t) => !ids.includes(t.id));
+      const at = before ? list.findIndex((t) => t.id === before) : -1;
+      list.splice(at < 0 ? list.length : at, 0, ...moved);
+      for (const t of moved) {
+        t.parentId = areaId;
+        t.panelId = area.panelId;
+        if (column !== undefined) t.column = column;
+        t.updatedAt = Date.now();
+      }
+      list.forEach((t, i) => (t.order = i));
+    }),
   addSubtask: (id) => {
     const subId = nanoid();
-    get().transact((doc) => {
-      const item = doc.items[id];
+    get().transact((d) => {
+      const item = d.items[id];
       if (item?.type === 'task') {
-        item.subtasks.push({ id: subId, title: '', state: 'blank' });
-        item.subtasksExpanded = true;
         item.collapsed = false;
+        item.subtasksExpanded = true;
+        item.subtasks.push({ id: subId, title: '', state: 'blank' });
         item.updatedAt = Date.now();
-        growAncestors(doc, id);
       }
     });
     return subId;
   },
   updateSubtask: (id, subId, patch) =>
-    get().transact((doc) => {
-      const item = doc.items[id];
-      if (item?.type !== 'task') return;
-      const sub = item.subtasks.find((s) => s.id === subId);
-      if (
-        sub &&
-        ((patch.title !== undefined && sub.title !== patch.title) ||
-          (patch.state !== undefined && sub.state !== patch.state))
-      ) {
-        if (patch.title !== undefined) sub.title = patch.title;
-        if (patch.state !== undefined) sub.state = patch.state;
-        item.updatedAt = Date.now();
-        growAncestors(doc, id);
+    get().transact((d) => {
+      const item = d.items[id];
+      if (item?.type === 'task') {
+        const sub = item.subtasks.find((s) => s.id === subId);
+        if (sub) {
+          if (patch.title !== undefined) sub.title = patch.title;
+          if (patch.state !== undefined) sub.state = patch.state;
+          item.updatedAt = Date.now();
+        }
       }
     }),
   deleteSubtask: (id, subId) =>
-    get().transact((doc) => {
-      const item = doc.items[id];
+    get().transact((d) => {
+      const item = d.items[id];
       if (item?.type === 'task') {
         item.subtasks = item.subtasks.filter((s) => s.id !== subId);
         item.updatedAt = Date.now();
       }
     }),
-  reorderSubtasks: (id, from, to, after) =>
-    get().transact((doc) => {
-      const item = doc.items[id];
+  reorderSubtasks: (id, from, to, after = false) =>
+    get().transact((d) => {
+      const item = d.items[id];
       if (item?.type !== 'task' || from === to) return;
-      const a = item.subtasks.findIndex((s) => s.id === from),
-        b = item.subtasks.findIndex((s) => s.id === to);
-      if (a >= 0 && b >= 0) {
-        const [sub] = item.subtasks.splice(a, 1);
-        const index =
-          after === undefined
-            ? b
-            : item.subtasks.findIndex((s) => s.id === to) + Number(after);
-        item.subtasks.splice(index, 0, sub);
-        item.updatedAt = Date.now();
-      }
+      const a = item.subtasks.findIndex((s) => s.id === from);
+      if (a < 0 || !item.subtasks.some((s) => s.id === to)) return;
+      const [sub] = item.subtasks.splice(a, 1);
+      item.subtasks.splice(
+        item.subtasks.findIndex((s) => s.id === to) + Number(after),
+        0,
+        sub,
+      );
+      item.updatedAt = Date.now();
     }),
 }));

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from '../model/store';
 export function Editable({
   value,
@@ -13,6 +13,7 @@ export function Editable({
   onLiveChange,
   onEditStart,
   onEditEnd,
+  activation = 'click',
 }: {
   value: string;
   onCommit: (value: string) => void;
@@ -26,22 +27,23 @@ export function Editable({
   onLiveChange?: (value: string) => void;
   onEditStart?: () => void;
   onEditEnd?: () => void;
+  activation?: 'click' | 'none';
 }) {
-  const [active, setActive] = useState(editing);
-  const [draft, setDraft] = useState(value);
-  const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-  const selectedBeforeTap = useRef(false);
-  const sessions = useRef({ onEditStart, onEditEnd });
-  sessions.current = { onEditStart, onEditEnd };
+  const [active, setActive] = useState(editing),
+    [draft, setDraft] = useState(value);
+  const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null),
+    session = useRef({ onEditStart, onEditEnd });
+  session.current = { onEditStart, onEditEnd };
   useEffect(() => {
-    if (!active) return;
-    sessions.current.onEditStart?.();
-    return () => sessions.current.onEditEnd?.();
+    if (active) {
+      session.current.onEditStart?.();
+      return () => session.current.onEditEnd?.();
+    }
   }, [active]);
   useEffect(() => {
     if (editing) {
-      setActive(true);
       setDraft(value);
+      setActive(true);
     }
   }, [editing, value]);
   useEffect(() => {
@@ -50,9 +52,15 @@ export function Editable({
       if (!multiline) input.current?.select();
     }
   }, [active, multiline]);
+  useLayoutEffect(() => {
+    if (active && multiline && input.current) {
+      input.current.style.height = '0px';
+      input.current.style.height = `${input.current.scrollHeight}px`;
+    }
+  }, [active, multiline, draft]);
   const finish = () => {
     if (draft !== value) onCommit(draft);
-    sessions.current.onEditEnd?.();
+    session.current.onEditEnd?.();
     setActive(false);
     onFinish?.();
   };
@@ -60,44 +68,16 @@ export function Editable({
     return (
       <div
         className={`editable ${className} ${!value ? 'placeholder' : ''}`}
-        onPointerDownCapture={(e) => {
-          const id =
-            e.currentTarget.closest<HTMLElement>('[data-item-id]')?.dataset
-              .itemId;
-          selectedBeforeTap.current =
-            !id || useStore.getState().selection.includes(id);
-        }}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          if (
-            window.matchMedia('(pointer: coarse)').matches ||
-            useStore.getState().selectionMode
-          )
+        title={
+          activation === 'none' ? undefined : `Edit ${label.toLowerCase()}`
+        }
+        onClick={(e) => {
+          if (activation === 'none' || useStore.getState().selectionMode)
             return;
+          e.stopPropagation();
           setDraft(value);
           setActive(true);
         }}
-        onClick={(e) => {
-          const s = useStore.getState();
-          if (s.selectionMode) return;
-          const touch = window.matchMedia('(pointer: coarse)').matches;
-          const id =
-            e.currentTarget.closest<HTMLElement>('[data-item-id]')?.dataset
-              .itemId;
-          if (touch && id && !selectedBeforeTap.current) {
-            s.select([id]);
-            return;
-          }
-          if (touch || label === 'Description') {
-            setDraft(value);
-            setActive(true);
-          }
-        }}
-        title={
-          window.matchMedia('(pointer: coarse)').matches
-            ? `Select, then tap to edit ${label.toLowerCase()}`
-            : `Double-click to edit ${label.toLowerCase()}`
-        }
       >
         {value || placeholder || label}
       </div>
@@ -116,14 +96,14 @@ export function Editable({
     onBlur: finish,
     onKeyDown: (e: React.KeyboardEvent) => {
       e.stopPropagation();
-      if (e.key === 'Escape') {
+      if (
+        e.key === 'Escape' ||
+        (e.key === 'Enter' && !multiline && !e.nativeEvent.isComposing)
+      ) {
         input.current?.blur();
-      }
-      if (e.key === 'Enter' && !multiline && !e.nativeEvent.isComposing) {
-        input.current?.blur();
-        onEnter?.();
+        if (e.key === 'Enter') onEnter?.();
       }
     },
   };
-  return multiline ? <textarea {...props} rows={5} /> : <input {...props} />;
+  return multiline ? <textarea {...props} rows={1} /> : <input {...props} />;
 }

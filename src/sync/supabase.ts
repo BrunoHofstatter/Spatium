@@ -15,6 +15,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 export interface CloudSnapshot {
   document: Doc;
   revision: number;
+  legacyDocument?: unknown;
 }
 export class CloudConflict extends Error {}
 export interface CloudRepository {
@@ -26,9 +27,22 @@ function snapshot(raw: unknown): CloudSnapshot | null {
   const row = raw as { document?: unknown; revision?: number };
   if (!row || !Number.isSafeInteger(row.revision) || row.revision! < 1)
     throw new Error('The cloud returned an invalid saved version.');
-  return { document: migrate(row.document), revision: row.revision! };
+  const legacy =
+    row.document &&
+    typeof row.document === 'object' &&
+    'schemaVersion' in row.document &&
+    row.document.schemaVersion !== 4;
+  return {
+    document: migrate(row.document),
+    revision: row.revision!,
+    ...(legacy ? { legacyDocument: structuredClone(row.document) } : {}),
+  };
 }
 function message(error: { code?: string; message: string }): Error {
+  if (error.code === '22023')
+    return new Error(
+      'Cloud sync needs the grid update. Your work remains saved on this device.',
+    );
   if (error.code === '40001')
     return new CloudConflict('A newer cloud version is available.');
   if (error.code === 'PGRST202' || error.code === '42P01')

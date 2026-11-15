@@ -1,5 +1,19 @@
 # Spatium implementation and review record
 
+## Current grid redesign ? 2026-11-15
+
+Implemented the owner's agreed replacement for free placement: independently ordered area columns, drag-only creation of additional columns, fixed-scale two-dimensional board scrolling, complete task miniatures, focused area routes with transitions, Back/browser history/left-edge swipe, and automatic one/two-column task flow. Collapsed tasks expand on tap; text edits inline; hold/mouse drag reorder with insertion feedback and native edge scrolling. Selection supports bulk typography, moves, deletion and group reorder. Empty columns persist until removed. Desktop uses the same structure.
+
+Format-4 migration retains task/area IDs, writing, states, Important, subtasks/order, font sizes, colors and timestamps. Nested areas flatten to Parent ? Child. Loose tasks receive an Unsorted area. Notes are intentionally omitted from the new live document by owner decision. Migration is deterministic, including generated Unsorted/column IDs, so existing sync checkpoints and unchanged device copies compare consistently. Invalid/newer documents remain intact.
+
+The first version-4 local write atomically pins the raw old document at spatium-before-grid-v4; old cloud reads pin spatium-cloud-before-grid-v4 before replacement. Both are separate from rotating recovery. Updated Supabase setup privately pins the original hosted document, preserves the owner/live row, accepts only version-4 writes and rejects older clients. The hosted SQL update requires project admin access; the source, PostgreSQL tests and upgrade instructions are included. The secure admin-token request was not completed in this run, so the hosted SQL has NOT been applied. Cloud format-4 uploads need that update; local saves remain available.
+
+Checks: 26 passing unit/PostgreSQL tests and 23 passing desktop/portrait Chromium browser tests, with 3 input-device-specific skips. Lint, formatting, strict TypeScript/Vite build and production CSS/routes/IndexedDB reload/offline-service-worker smoke pass. Browser coverage includes native touch scrolling versus hold reorder, remembered column membership, same-column expansion, explicit column placement, bulk actions, migration backup integrity, unsupported-version preservation, board scroll restoration, animation and two-device sync/conflict recovery. The obsolete free-canvas tests were replaced with grid behavior checks; persistence and sync regressions remain.
+
+Visual inspection used generated desktop/mobile board and focused-area screenshots. Production testing caught and fixed a view-transition timeout: React updates now complete synchronously inside the transition callback instead of waiting for a rendering frame while rendering is paused. Physical iPhone Safari/Home Screen keyboard, native edge navigation and storage acceptance remain device checks. No additional delegated review round was requested or launched for implementation.
+
+---
+
 ## Private cloud sync — 2026-11-15
 
 The owner approved adding single-user phone/PC sync through Supabase. The client uses project `pfomcrdvmrrufutppuwl` and the provided browser publishable key. Credentials for database administration and app login are not embedded in the app. This supersedes the original local-only scope for the sync work.
@@ -12,7 +26,7 @@ Final sync-change checks: **44 passing unit/SQL tests**, **57 passing desktop/po
 
 The earlier implementation/review history below remains as a record of those checkpoints; its old local-only and deployment status notes are historical.
 
-## Current mobile-usability revision — 2026-11-15
+## Previous mobile-usability revision — 2026-11-15
 
 Implemented the owner-approved mobile adaptations: a simpler bottom action bar with More; a labelled, larger State button and explicit four-choice touch menu; Select more with tap-to-toggle membership and Finish selection; touch-accessible task/area title sizing with −/+ controls; first-tap selection before text editing; transparent inline editing with Done and visual-viewport/caret accommodation; bounded zoom compensation for selected resize handles; visible, occupancy-aware creation within a selected area; area focus with bottom-control clearance and mobile task focus at a readable width; Home/subtask reorder previews, insertion markers and edge scroll/pan; Home Move up/down actions; and a 9-pixel touch alignment tolerance matching preview and release.
 

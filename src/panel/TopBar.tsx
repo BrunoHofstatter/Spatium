@@ -29,7 +29,7 @@ export function HistoryButtons() {
     </div>
   );
 }
-function Filters() {
+export function Filters() {
   const highlights = useStore((s) => s.highlights),
     showDone = useStore((s) => s.doc.settings.showDone),
     colors = useStore((s) => s.doc.settings.stateColors);
@@ -72,21 +72,44 @@ function Filters() {
     </>
   );
 }
-export function TopBar({ panelId }: { panelId: string }) {
+export function TopBar({
+  panelId,
+  areaId,
+  back,
+}: {
+  panelId: string;
+  areaId?: string;
+  back?: () => void;
+}) {
   const title = useStore((s) => s.doc.panels[panelId].title);
   return (
     <>
       <header className="topBar">
-        <a className="homeButton" href="#/" title="Home" aria-label="Home">
-          ⊞<span>Home</span>
-        </a>
+        {areaId ? (
+          <button
+            className="homeButton"
+            onClick={back}
+            aria-label="Back to panel"
+          >
+            ←
+          </button>
+        ) : (
+          <a className="homeButton" href="#/" title="Home" aria-label="Home">
+            ⊞<span>Home</span>
+          </a>
+        )}
         <span className="separator" />
-        <Editable
-          className="panelTitle"
-          value={title}
-          label="Panel title"
-          onCommit={(value) => useStore.getState().renamePanel(panelId, value)}
-        />
+        {!areaId && (
+          <Editable
+            className="panelTitle"
+            value={title}
+            label="Panel title"
+            onCommit={(value) =>
+              useStore.getState().renamePanel(panelId, value)
+            }
+          />
+        )}
+        {areaId && <span className="panelTitle">{title}</span>}
         <div className="desktopFilters">
           <Filters />
         </div>

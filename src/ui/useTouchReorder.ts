@@ -4,13 +4,12 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useStore } from '../model/store';
-import { visibleCanvas } from '../canvas/visibleCanvas';
 
 export function useTouchReorder(options: {
   rows: () => HTMLElement[];
   attribute: string;
   drop: (from: string, to: string, after: boolean) => void;
-  panelId?: string;
+  scrollElement?: () => HTMLElement | null;
 }) {
   const latest = useRef(options);
   latest.current = options;
@@ -80,14 +79,10 @@ export function useTouchReorder(options: {
     };
     const animate = (time: number) => {
       if (!moved) return;
-      const canvas = latest.current.panelId
-        ? document.querySelector<HTMLElement>('.canvas')
-        : null;
-      const bounds = canvas?.getBoundingClientRect(),
-        size = canvas ? visibleCanvas(canvas) : null;
-      const top = bounds && size ? bounds.top + size.y : 0;
-      const bottom =
-        bounds && size ? bounds.top + size.y + size.h : window.innerHeight;
+      const canvas = latest.current.scrollElement?.();
+      const bounds = canvas?.getBoundingClientRect();
+      const top = bounds?.top ?? 0,
+        bottom = bounds?.bottom ?? window.innerHeight;
       const direction =
         point.y < top + 60
           ? -Math.min(1, (top + 60 - point.y) / 60)
@@ -97,15 +92,8 @@ export function useTouchReorder(options: {
       const amount =
         direction * Math.min(32, lastTime ? time - lastTime : 16) * 0.6;
       lastTime = time;
-      if (amount && latest.current.panelId) {
-        const s = useStore.getState(),
-          view = s.doc.panels[latest.current.panelId]?.viewport;
-        if (view)
-          s.setViewport(latest.current.panelId, {
-            ...view,
-            y: view.y - amount,
-          });
-      } else if (amount) window.scrollBy(0, amount);
+      if (amount && canvas) canvas.scrollBy(0, amount);
+      else if (amount) window.scrollBy(0, amount);
       target();
       frame = requestAnimationFrame(animate);
     };
