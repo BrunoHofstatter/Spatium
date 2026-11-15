@@ -1,0 +1,1779 @@
+.surface {
+  min-height: 100dvh;
+}
+:global(.alignmentGuide) {
+  position: absolute;
+  z-index: 90;
+  pointer-events: none;
+}
+:global(.guide-x) {
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed #8d76cf;
+}
+:global(.guide-y) {
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #8d76cf;
+}
+:global(.app) {
+  min-height: 100dvh;
+}
+:global(.bootScreen) {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 24px;
+}
+:global(.bootScreen button) {
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+}
+:global(.saveError) {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  background: #fff0e5;
+  color: #8d4f27;
+  padding: 12px 20px;
+  border-radius: 0 0 12px 12px;
+  max-width: 90vw;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+:global(.homeScreen) {
+  max-width: 1320px;
+  margin: auto;
+  padding: max(36px, env(safe-area-inset-top)) 64px 24px;
+}
+:global(.homeHeader),
+:global(.homeActions),
+:global(.homeFooter),
+:global(.settingsHeader) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+:global(.brand) {
+  display: flex;
+  align-items: center;
+  font-size: 25px;
+  letter-spacing: -0.8px;
+  font-weight: 650;
+}
+:global(.brandMark) {
+  display: inline-grid;
+  place-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  margin-right: 12px;
+  font-size: 25px;
+}
+:global(.brandDot) {
+  color: var(--accent);
+}
+:global(.iconButton) {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-content: center;
+  font-size: 20px;
+  border-radius: 8px;
+  color: #7c8394;
+}
+:global(.iconButton:hover) {
+  background: #7480a010;
+}
+:global(.homeActions) {
+  gap: 18px;
+}
+:global(.homeIntro) {
+  margin: 75px 0 38px;
+}
+:global(.eyebrow) {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+:global(h1) {
+  font-size: 36px;
+  font-weight: 550;
+  letter-spacing: -1.2px;
+  margin-bottom: 12px;
+}
+:global(.homeIntro > p:last-child),
+:global(.settingsSubtitle) {
+  color: var(--muted);
+  font-size: 14px;
+}
+:global(.panelGrid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+:global(.panelCard) {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+  min-width: 0;
+}
+:global(.panelCard:hover) {
+  border-color: #cbd0df;
+  box-shadow: 0 5px 24px #30384910;
+}
+:global(.thumbnailLink) {
+  display: block;
+  padding: 20px;
+  height: 200px;
+  background: #fafbfc;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+}
+:global(.thumbnail) {
+  width: 100%;
+  height: 100%;
+}
+:global(.panelCardFooter) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 14px 14px 10px;
+  border-top: 1px solid var(--line);
+  height: 62px;
+  font-size: 14px;
+  font-weight: 550;
+}
+:global(.panelCardFooter > .editable) {
+  flex: 1;
+}
+:global(.panelGrip) {
+  cursor: grab;
+  color: #b8becb;
+  padding: 10px 3px;
+  touch-action: none;
+  user-select: none;
+}
+:global(.panelMenu) {
+  position: relative;
+}
+:global(.panelMenu summary) {
+  list-style: none;
+  cursor: pointer;
+  font-size: 22px;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  color: var(--muted);
+}
+:global(summary::-webkit-details-marker) {
+  display: none;
+}
+:global(.panelMenu > div) {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  z-index: 10;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: var(--shadow);
+  width: 130px;
+}
+:global(.panelMenu button) {
+  display: block;
+  text-align: left;
+  width: 100%;
+  padding: 10px;
+  font-size: 13px;
+}
+:global(.danger) {
+  color: #c25463;
+}
+:global(.newPanelCard) {
+  min-height: 262px;
+  border: 1px dashed #d4d9e5;
+  border-radius: var(--radius);
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #8b93a5;
+  font-size: 13px;
+}
+:global(.newPanelCard > span) {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-content: center;
+  font-size: 25px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+}
+:global(.homeFooter) {
+  margin-top: 70px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  color: #a1a8b7;
+  font-size: 11px;
+}
+:global(.panelScreen) {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+:global(.topBar) {
+  min-height: 64px;
+  padding: max(10px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right)) 10px
+    max(18px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  z-index: 100;
+}
+:global(.homeButton) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #7d8495;
+  font-size: 22px;
+}
+:global(.homeButton span) {
+  font-size: 12px;
+}
+:global(.separator) {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+}
+:global(.panelTitle) {
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 180px;
+  min-width: 50px;
+}
+:global(.desktopFilters) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+:global(.filterChips) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+:global(.filterLabel) {
+  color: #9aa1af;
+  font-size: 11px;
+  margin-right: 5px;
+}
+:global(.chip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #7d8596;
+}
+:global(.chip i) {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+:global(.chip.active) {
+  background: #f0f1fc;
+  border-color: #d6d9ef;
+  color: #575fa4;
+}
+:global(.doneSwitch) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #7d8596;
+  cursor: pointer;
+}
+:global(.topActions) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:global(.historyButtons) {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+:global(.historyButtons button) {
+  width: 30px;
+  height: 34px;
+  font-size: 23px;
+  color: #7b8496;
+}
+:global(.gridButton) {
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  color: #8991a2;
+}
+:global(.gridButton.active) {
+  color: var(--accent);
+  background: #efeffa;
+}
+:global(.mobileFilters) {
+  display: none;
+}
+:global(.canvas) {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  background-color: #f8f9fc;
+  overscroll-behavior: none;
+}
+:global(.world) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+:global(.canvasEmpty) {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  width: 90%;
+}
+:global(.emptyMark) {
+  font-size: 46px;
+  color: #bcc0dc;
+}
+:global(.canvasEmpty h2) {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  margin: 14px 0 10px;
+  color: #788094;
+}
+:global(.canvasEmpty p) {
+  font-size: 12px;
+  color: #a0a7b5;
+  line-height: 1.8;
+}
+:global(.canvasHint) {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 20px;
+  right: 92px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  font-size: 10px;
+  color: #9ba2b3;
+}
+:global(.canvasHint b) {
+  font-weight: 400;
+}
+:global(.selectionBox) {
+  position: absolute;
+  background: #6268ce15;
+  border: 1px solid #777ddb;
+  pointer-events: none;
+}
+:global(.canvasItem) {
+  position: absolute;
+  border-radius: 10px;
+  transition:
+    box-shadow 0.15s,
+    opacity 0.15s;
+}
+:global(.canvasItem.task) {
+  background: color-mix(in srgb, var(--item-color) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--item-color) 26%, #e5e8ef);
+  box-shadow: 0 2px 7px #30384909;
+}
+:global(.canvasItem.area) {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 8px;
+}
+:global(.canvasItem.selected) {
+  outline: 2px solid #777ddb;
+  outline-offset: 1px;
+}
+:global(.canvasItem.matched) {
+  box-shadow:
+    0 0 0 2px var(--glow-color),
+    0 0 18px color-mix(in srgb, var(--glow-color) 24%, transparent);
+}
+:global(.canvasItem.dimmed) {
+  opacity: 0.35;
+  filter: saturate(0.15);
+}
+:global(.canvasItem.done .taskTitle) {
+  text-decoration: line-through;
+  color: #7d8c85;
+}
+:global(.taskMain) {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 9px;
+}
+:global(.compactTask) {
+  padding: 5px 10px;
+  gap: 3px;
+}
+:global(.compactTask .description) {
+  display: none;
+}
+:global(.compactTask .taskHeading) {
+  min-height: 20px;
+  flex-shrink: 0;
+}
+:global(.compactTask .subtaskToggle) {
+  flex-shrink: 0;
+}
+:global(.taskHeading) {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+:global(.taskTitle) {
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.5;
+  flex: 1;
+}
+:global(.stateDot) {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  padding: 0;
+  border-radius: 50%;
+  margin-top: 5px;
+  box-shadow: 0 0 0 4px transparent;
+}
+:global(.stateDot:hover) {
+  box-shadow: 0 0 0 4px #8991a220;
+}
+:global(button.stateDot:hover:not(:disabled)) {
+  background-color: revert-layer;
+}
+:global(.star) {
+  padding: 0 1px;
+  font-size: 17px;
+  line-height: 20px;
+  color: #a8aebe;
+}
+:global(.starOn) {
+  color: var(--important);
+}
+:global(.description) {
+  flex: 1;
+  min-height: 0;
+  margin-left: 19px;
+  color: #8790a2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+:global(.description > .editable) {
+  height: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+:global(.description:has(textarea)) {
+  z-index: 15;
+  position: relative;
+}
+:global(.description textarea) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: transparent;
+  box-shadow: none;
+  position: static;
+  display: block;
+}
+:global(.subtaskToggle) {
+  align-self: flex-start;
+  font-size: 11px;
+  color: #8a93a3;
+  padding: 0 3px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+:global(.subtasks) {
+  border-top: 1px solid color-mix(in srgb, var(--item-color) 15%, transparent);
+  padding: 0 10px;
+}
+:global(.subtask) {
+  height: 36px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+:global(.subtask > .editable),
+:global(.subtask > input) {
+  flex: 1;
+}
+:global(.subtask .stateDot) {
+  margin: 0;
+}
+:global(.subtaskDone > .editable) {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+:global(.subtaskGrip) {
+  cursor: grab;
+  color: #a0a8b8;
+  touch-action: none;
+  padding: 6px 0;
+}
+:global(.subtaskDelete) {
+  font-size: 17px;
+  padding: 3px;
+  color: #a4adbd;
+}
+:global(.addSubtask) {
+  height: 40px;
+  padding-left: 16px;
+  font-size: 11px;
+  color: #8c95a5;
+}
+:global(.editable) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+  min-width: 0;
+}
+:global(.placeholder) {
+  color: #a1a9b8;
+  font-weight: 400;
+}
+:global(.textEditor) {
+  border: 0;
+  outline: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  min-width: 0;
+  width: 100%;
+  user-select: text;
+  font: inherit;
+  resize: none;
+}
+:global(.taskHeading > input) {
+  flex: 1;
+}
+:global(.areaHeader) {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  width: max(240px, calc(100% / var(--heading-scale)));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 2px 10px;
+  border-bottom: 4px solid var(--item-color);
+  color: var(--item-color);
+  font-size: var(--area-font-size);
+  font-weight: 600;
+  line-height: 1.2;
+  transform: scale(var(--heading-scale));
+  transform-origin: bottom left;
+  cursor: grab;
+}
+:global(.areaHeader button) {
+  padding: 3px;
+  font-size: 18px;
+  color: inherit;
+  flex-shrink: 0;
+}
+:global(.areaHeader > .editable) {
+  font-size: inherit;
+  font-weight: inherit;
+  flex: 1;
+}
+:global(.areaCounts) {
+  display: flex;
+  gap: 7px;
+  font-size: 10px;
+  color: #8a93a4;
+}
+:global(.areaCounts span) {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+:global(.areaCounts i) {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+:global(.areaContent) {
+  position: absolute;
+  left: 12px;
+  top: 44px;
+  right: 12px;
+  bottom: 12px;
+}
+:global(.matchBadge) {
+  color: var(--accent);
+  text-shadow: 0 0 8px #6268ce80;
+  margin-left: 4px;
+}
+:global(.canvasItem.note) {
+  padding: 8px;
+  border: 1px solid transparent;
+  color: #7f8799;
+  font-size: 13px;
+}
+:global(.canvasItem.note:hover) {
+  border-color: #d6dae6;
+}
+:global(.noteText) {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  height: 100%;
+}
+:global(.note textarea) {
+  height: 100%;
+  min-height: 100%;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+}
+:global(.resizeHandle) {
+  position: absolute;
+  z-index: 50;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #777ddb;
+  background: #fff;
+  border-radius: 2px;
+  touch-action: none;
+}
+:global(.handle-n) {
+  top: -5px;
+  left: calc(50% - 4px);
+  cursor: ns-resize;
+}
+:global(.handle-s) {
+  bottom: -5px;
+  left: calc(50% - 4px);
+  cursor: ns-resize;
+}
+:global(.handle-e) {
+  right: -5px;
+  top: calc(50% - 4px);
+  cursor: ew-resize;
+}
+:global(.handle-w) {
+  left: -5px;
+  top: calc(50% - 4px);
+  cursor: ew-resize;
+}
+:global(.handle-ne) {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+:global(.handle-se) {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+:global(.handle-sw) {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+:global(.handle-nw) {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+:global(.selectionToolbar) {
+  position: fixed;
+  bottom: max(36px, calc(env(safe-area-inset-bottom) + 12px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 5px 25px #30384915;
+  font-size: 11px;
+  white-space: nowrap;
+}
+:global(.selectionToolbar > button) {
+  height: 32px;
+  padding: 5px 8px;
+}
+:global(.selectionToolbar > .stateDot) {
+  margin: 0 8px;
+  height: 12px;
+  width: 12px;
+  padding: 0;
+}
+:global(.selectionLabel) {
+  text-transform: capitalize;
+  padding: 0 8px;
+  color: #9ba3b2;
+  font-size: 10px;
+}
+:global(.areaColor) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+:global(.areaColor input) {
+  width: 27px;
+  height: 27px;
+  padding: 1px;
+  border-radius: 5px;
+}
+:global(.stateMenu) {
+  position: fixed;
+  z-index: 2000;
+  width: 176px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 40px #30384920;
+  animation: appear 0.12s ease;
+}
+:global(.stateMenu button) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 10px;
+  font-size: 12px;
+}
+:global(.stateMenu button > span) {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+:global(.stateMenu button b) {
+  margin-left: auto;
+  color: var(--accent);
+}
+:global(.createControls) {
+  position: fixed;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  right: max(24px, env(safe-area-inset-right));
+  z-index: 160;
+}
+:global(.addButton) {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: white;
+  font-size: 29px;
+  font-weight: 300;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px #6268ce35;
+}
+:global(button.addButton:hover) {
+  background: #555dc1;
+}
+:global(.createMenu) {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  width: 155px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: var(--shadow);
+  animation: appear 0.12s ease;
+}
+:global(.createMenu button) {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  font-size: 13px;
+}
+:global(.createMenu span) {
+  color: var(--accent);
+}
+:global(.menuScrim) {
+  position: fixed;
+  inset: 0;
+  cursor: default;
+  border-radius: 0;
+}
+:global(button.menuScrim:hover) {
+  background: transparent;
+}
+:global(.settingsScreen) {
+  max-width: 620px;
+  padding: max(36px, env(safe-area-inset-top)) 30px
+    max(50px, env(safe-area-inset-bottom));
+  margin: auto;
+}
+:global(.settingsHeader) {
+  margin-bottom: 65px;
+}
+:global(.backLink) {
+  font-size: 13px;
+  color: #858ea0;
+}
+:global(.settingsSection) {
+  margin-top: 34px;
+  padding: 25px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+:global(.settingsSection h2) {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+:global(.settingsSection > p) {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+:global(.settingRow) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f2f3f7;
+  font-size: 13px;
+}
+:global(.settingRow small) {
+  display: block;
+  font-size: 11px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+:global(.settingRow input[type='number']) {
+  width: 70px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 16px;
+}
+:global(.secondaryButton) {
+  margin-top: 22px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+:global(.localNote) {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #9ba3b2;
+  margin-top: 28px;
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 1500px) {
+  :global(.panelGrid) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1200px) {
+  :global(.desktopFilters) {
+    display: none;
+  }
+  :global(.topActions) {
+    margin-left: auto;
+  }
+  :global(.mobileFilters) {
+    display: block;
+    position: relative;
+  }
+  :global(.mobileFilters summary) {
+    list-style: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 22px;
+    color: #7e8799;
+  }
+  :global(.filterPopover) {
+    position: absolute;
+    right: 0;
+    top: 42px;
+    width: 260px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  :global(.filterPopover .filterChips) {
+    flex-wrap: wrap;
+  }
+  :global(.filterPopover .filterLabel) {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+  :global(.filterPopover > a) {
+    font-size: 12px;
+    color: var(--accent);
+  }
+}
+@media (max-width: 900px) {
+  :global(.panelGrid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :global(.homeScreen) {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+}
+@media (max-width: 600px) {
+  :global(.homeScreen) {
+    padding: max(24px, env(safe-area-inset-top)) 22px
+      max(24px, env(safe-area-inset-bottom));
+  }
+  :global(.homeIntro) {
+    margin-top: 52px;
+    margin-bottom: 28px;
+  }
+  :global(h1) {
+    font-size: 29px;
+  }
+  :global(.panelGrid) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  :global(.newPanelCard) {
+    min-height: 135px;
+  }
+  :global(.homeFooter) {
+    font-size: 10px;
+    margin-top: 45px;
+  }
+  :global(.topBar) {
+    gap: 10px;
+    min-height: 58px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  :global(.homeButton span),
+  :global(.separator),
+  :global(.gridButton),
+  :global(.settingsLink) {
+    display: none;
+  }
+  :global(.panelTitle) {
+    flex: 1;
+    max-width: none;
+    font-size: 13px;
+  }
+  :global(.topActions) {
+    gap: 3px;
+  }
+  :global(.canvasHint span) {
+    display: none;
+  }
+  :global(.canvasHint) {
+    left: 15px;
+    bottom: max(90px, calc(env(safe-area-inset-bottom) + 76px));
+  }
+  :global(.selectionToolbar) {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    transform: none;
+    bottom: 0;
+    padding: 10px 8px max(10px, env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    width: 100%;
+    justify-content: center;
+    gap: 2px;
+    overflow-x: auto;
+  }
+  :global(.selectionLabel) {
+    display: none;
+  }
+  :global(.selectionToolbar > button) {
+    height: 38px;
+    padding: 5px 9px;
+  }
+  :global(.createControls) {
+    bottom: max(82px, calc(env(safe-area-inset-bottom) + 68px));
+    right: 18px;
+  }
+  :global(.settingsScreen) {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  :global(.settingsSection) {
+    padding: 20px;
+  }
+}
+@media (pointer: coarse) {
+  :global(.resizeHandle) {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+  }
+  :global(.handle-n),
+  :global(.handle-ne),
+  :global(.handle-nw) {
+    top: -9px;
+  }
+  :global(.handle-s),
+  :global(.handle-se),
+  :global(.handle-sw) {
+    bottom: -9px;
+  }
+  :global(.handle-e),
+  :global(.handle-ne),
+  :global(.handle-se) {
+    right: -9px;
+  }
+  :global(.handle-w),
+  :global(.handle-nw),
+  :global(.handle-sw) {
+    left: -9px;
+  }
+  :global(.handle-n),
+  :global(.handle-s) {
+    left: calc(50% - 8px);
+  }
+  :global(.handle-e),
+  :global(.handle-w) {
+    top: calc(50% - 8px);
+  }
+  :global(.stateDot) {
+    box-shadow: 0 0 0 7px #ffffff01;
+  }
+  :global(.subtaskGrip) {
+    padding: 8px 2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(*) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+:global(.crossingSelection) {
+  background: #49a77c18;
+  border: 1px dashed #49a77c;
+}
+:global(.canvasItem.area.selected),
+:global(.canvas.interacting .canvasItem.area:not(.areaCollapsed)) {
+  outline: 1px dashed color-mix(in srgb, var(--item-color) 45%, transparent);
+  outline-offset: 0;
+  background: color-mix(in srgb, var(--item-color) 3%, transparent);
+}
+:global(.canvasItem.area.areaCollapsed) {
+  outline: none;
+  background: transparent;
+}
+:global(.canvas.interacting .canvasItem.area.dropTarget) {
+  outline: 2px dashed var(--item-color);
+  background: color-mix(in srgb, var(--item-color) 9%, transparent);
+}
+:global(.titleResizeHandle) {
+  position: absolute;
+  right: -4px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid var(--item-color);
+  border-radius: 3px;
+  cursor: nwse-resize;
+  touch-action: none;
+  visibility: hidden;
+}
+:global(.selected > .areaHeader .titleResizeHandle) {
+  visibility: visible;
+}
+:global(.areaHeader > .textEditor) {
+  flex: 1;
+}
+:global(.areaHeader .areaFocus) {
+  opacity: 0;
+}
+:global(.areaHeader:hover .areaFocus),
+:global(.selected > .areaHeader .areaFocus),
+:global(.areaHeader:focus-within .areaFocus) {
+  opacity: 1;
+}
+:global(.collapsedTask) {
+  padding: 9px 10px;
+  gap: 0;
+}
+:global(.taskCollapse) {
+  padding: 0;
+  width: 16px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: #8a93a3;
+}
+:global(.taskProgress) {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 3px;
+  background:
+    radial-gradient(circle, white 43%, transparent 46%),
+    conic-gradient(#727bab var(--progress), #b7bed44d 0);
+  color: #727bab;
+  font-size: 9px;
+  display: grid;
+  place-items: center;
+}
+:global(.textEditor.taskTitle) {
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+:global(.textEditor.panelTitle) {
+  font-size: 14px;
+  font-weight: 600;
+}
+:global(.stateControl) {
+  display: inline-flex;
+  position: relative;
+  flex: 0 0 auto;
+  align-items: flex-start;
+}
+:global(.stateChoices) {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -7px;
+  display: flex;
+  padding: 4px;
+  gap: 2px;
+  background: white;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 80;
+}
+:global(.stateControl:hover .stateChoices),
+:global(.stateControl:focus-within .stateChoices),
+:global(.selected > .taskMain > .taskHeading .stateChoices),
+:global(.stateChoices.choicesOpen) {
+  visibility: visible;
+  opacity: 1;
+}
+:global(.stateChoices button) {
+  padding: 5px;
+  display: grid;
+  place-items: center;
+}
+:global(.stateChoices button span) {
+  width: 11px;
+  height: 11px;
+  background: var(--choice-color);
+  border-radius: 50%;
+}
+:global(.stateChoices button[aria-pressed='true']) {
+  outline: 1px solid var(--choice-color);
+}
+:global(.contextCreateMenu) {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+}
+:global(.controlLegend) {
+  margin-top: 18px;
+  line-height: 1.8;
+}
+:global(.settingRow select) {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px;
+  background: white;
+  font-size: 14px;
+  max-width: 60%;
+}
+@media (pointer: coarse) {
+  :global(.titleResizeHandle) {
+    width: 20px;
+    height: 20px;
+    right: -8px;
+    bottom: -11px;
+  }
+  :global(.taskTitle),
+  :global(.textEditor.taskTitle),
+  :global(.description),
+  :global(.subtask),
+  :global(.canvasItem.note) {
+    font-size: 16px;
+  }
+  :global(.collapsedTask) {
+    padding: 7px 10px;
+  }
+}
+
+:global(.taskMain) {
+  gap: 10px;
+}
+:global(.taskHeading) {
+  align-items: center;
+  min-height: 22px;
+}
+:global(.taskTitle),
+:global(.textEditor.taskTitle) {
+  font-size: var(--task-title-size, 16px);
+  line-height: 1.4;
+}
+:global(.collapsedTask) {
+  padding: 8px 10px;
+  gap: 0;
+}
+:global(.taskHeading .stateDot),
+:global(.taskProgress) {
+  margin-top: 0;
+}
+:global(.stateDot) {
+  width: 12.5px;
+  height: 12.5px;
+  min-width: 12.5px;
+}
+:global(.stateControl) {
+  align-items: center;
+}
+:global(.stateChoices button span) {
+  width: 13.75px;
+  height: 13.75px;
+}
+:global(.description) {
+  font-size: 16px;
+  line-height: 24px;
+}
+:global(.description > .editable) {
+  mask-image: none;
+  overflow-wrap: anywhere;
+}
+:global(.description textarea) {
+  line-height: 24px;
+  overflow-wrap: anywhere;
+  overflow-y: hidden;
+}
+:global(.subtaskToggle) {
+  height: 16px;
+  line-height: 16px;
+  flex-shrink: 0;
+}
+:global(.taskFontMenu) {
+  width: 220px;
+  padding: 8px;
+}
+:global(.taskFontMenu label) {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  font-size: 13px;
+  padding: 5px;
+}
+:global(.taskFontMenu input) {
+  width: 65px;
+  padding: 6px;
+  font-size: 16px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+:global(.homeScreen) {
+  max-width: 1600px;
+  padding-bottom: 120px;
+}
+:global(.homeHeader) {
+  justify-content: center;
+  position: relative;
+  min-height: 125px;
+  margin-bottom: 45px;
+}
+:global(.homeHeader h1) {
+  font-size: 38px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -1.3px;
+}
+:global(.homeActions) {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+:global(.panelGrid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 45px 38px;
+}
+:global(.panelCard),
+:global(.panelCard:hover) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+:global(.panelBoardHeader) {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border-bottom: 3px solid #7770bd;
+  padding: 8px 0;
+  color: #5e5991;
+}
+:global(.panelBoardHeader h2) {
+  margin: 0;
+  flex: 1;
+  font-size: 26px;
+  font-weight: 550;
+  letter-spacing: -0.5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:global(.panelBoardHeader h2 a) {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:global(.thumbnailLink) {
+  background: transparent;
+  border-radius: 0;
+  height: 220px;
+  padding: 15px 0;
+}
+:global(.homeAddButton) {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  z-index: 150;
+}
+:global(.settingsScreen) {
+  max-width: 1200px;
+  width: 100%;
+  padding-left: 48px;
+  padding-right: 48px;
+}
+:global(.settingsHeader) {
+  margin-bottom: 36px;
+}
+:global(.settingsGrid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+:global(.settingsGrid .settingsSection) {
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  :global(.panelGrid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 650px) {
+  :global(.homeHeader) {
+    min-height: 140px;
+    margin-bottom: 25px;
+    padding-top: 40px;
+  }
+  :global(.homeHeader h1) {
+    font-size: 32px;
+  }
+  :global(.panelGrid) {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  :global(.settingsScreen) {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  :global(.settingsGrid) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* Touch actions stay outside the zoomed world. */
+:global(.stateButton) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+}
+:global(.stateButton i) {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+:global(.fontSizeControl) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+:global(.fontSizeControl input) {
+  width: 64px;
+  text-align: center;
+  font-size: 16px;
+}
+:global(.fontSizeControl button) {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 20px;
+  background: white;
+}
+:global(.creationContext) {
+  margin: 4px 10px 8px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #697287;
+  font-size: 12px;
+}
+:global(.touchToolbar),
+:global(.selectionModeBar) {
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  transform: none;
+  width: 100%;
+  min-height: 64px;
+  border-radius: 16px 16px 0 0;
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom));
+  justify-content: space-evenly;
+  gap: 4px;
+  overflow: visible;
+}
+:global(.touchToolbar > button),
+:global(.selectionModeBar > button) {
+  height: 44px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+:global(.touchToolbar .selectionLabel) {
+  display: none;
+}
+:global(.selectionModeBar) {
+  justify-content: space-between;
+  font-size: 13px;
+}
+:global(.selectInstructions) {
+  color: #8790a2;
+  font-size: 11px;
+}
+:global(.actionSheetLayer) {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+}
+:global(.sheetBackdrop) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  background: #21283738;
+}
+:global(.actionSheet) {
+  position: absolute;
+  left: 50%;
+  bottom: var(--keyboard-inset, 0px);
+  transform: translateX(-50%);
+  width: min(100%, 520px);
+  max-height: calc(var(--touch-visible-height, 100dvh) - 32px);
+  overflow-y: auto;
+  background: white;
+  padding: 16px 20px max(20px, env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px #222b441a;
+}
+:global(.actionSheet header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+:global(.actionSheet h2) {
+  font-size: 16px;
+  margin: 0;
+}
+:global(.actionSheet button) {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 15px;
+  border-radius: 9px;
+}
+:global(.sheetActions) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+:global(.sheetActions > button),
+:global(.sheetActions > label) {
+  border: 1px solid #e8eaf0;
+}
+:global(.sheetActions .areaColor) {
+  justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 15px;
+}
+:global(.sheetActions .areaColor input) {
+  width: 40px;
+  height: 40px;
+}
+:global(.actionSheet .taskFontMenu) {
+  width: 100%;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+:global(.actionSheet .taskFontMenu > label) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+:global(.actionSheet .taskFontMenu > button) {
+  border: 1px solid var(--line);
+}
+:global(.editingDone) {
+  position: fixed;
+  z-index: 2100;
+  right: max(16px, env(safe-area-inset-right));
+  top: calc(
+    var(--touch-visible-top, 0px) + var(--touch-visible-height, 100dvh) - 64px
+  );
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 22px;
+  color: white;
+  background: var(--accent);
+  box-shadow: 0 4px 20px #33334b30;
+  font-size: 15px;
+}
+:global(html[data-touch-editing] .selectionToolbar),
+:global(html[data-touch-editing] .createControls) {
+  display: none;
+}
+:global(.touchDragGhost) {
+  z-index: 2500 !important;
+  pointer-events: none !important;
+  opacity: 0.9;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 28px #222b4430;
+}
+:global(.reorderSource) {
+  opacity: 0.35;
+}
+:global(.reorderInsertion) {
+  position: fixed;
+  z-index: 2501;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+:global(.selectingItems .resizeHandle),
+:global(.selectingItems .titleResizeHandle) {
+  visibility: hidden;
+}
+@media (pointer: coarse), (max-width: 600px) {
+  :global(.panelScreen:not(.hasSelection) .createControls) {
+    bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  }
+  :global(.panelScreen.hasSelection .createControls) {
+    bottom: max(88px, calc(env(safe-area-inset-bottom) + 76px));
+  }
+  :global(.stateMenu) {
+    left: 50% !important;
+    top: auto !important;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(420px, calc(100% - 24px));
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    border-radius: 18px;
+  }
+  :global(.stateMenu button) {
+    min-height: 48px;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+  :global(.stateMenu button[aria-pressed='true']) {
+    background: #f0eef9;
+  }
+  :global(.stateMenu button > span) {
+    width: 13px;
+    height: 13px;
+  }
+  :global(.historyButtons button),
+  :global(.panelMenu summary),
+  :global(.mobileFilters summary),
+  :global(.homeButton),
+  :global(.iconButton) {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  :global(.filterPopover > a) {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 14px;
+  }
+  :global(.panelMenu button) {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  :global(.panelGrip),
+  :global(.subtaskGrip) {
+    min-width: 32px;
+    text-align: center;
+    padding: 8px 4px;
+  }
+  :global(.settingRow select),
+  :global(.textEditor.panelTitle) {
+    font-size: 16px;
+  }
+}
+@media (pointer: coarse) {
+  :global(.resizeHandle) {
+    width: var(--handle-size, 32px);
+    height: var(--handle-size, 32px);
+    border-radius: 8px;
+  }
+  :global(.handle-n),
+  :global(.handle-ne),
+  :global(.handle-nw) {
+    top: calc(var(--handle-size, 32px) / -2);
+  }
+  :global(.handle-s),
+  :global(.handle-se),
+  :global(.handle-sw) {
+    bottom: calc(var(--handle-size, 32px) / -2);
+  }
+  :global(.handle-w),
+  :global(.handle-nw),
+  :global(.handle-sw) {
+    left: calc(var(--handle-size, 32px) / -2);
+  }
+  :global(.handle-e),
+  :global(.handle-ne),
+  :global(.handle-se) {
+    right: calc(var(--handle-size, 32px) / -2);
+  }
+  :global(.handle-n),
+  :global(.handle-s) {
+    left: calc(50% - var(--handle-size, 32px) / 2);
+  }
+  :global(.handle-e),
+  :global(.handle-w) {
+    top: calc(50% - var(--handle-size, 32px) / 2);
+  }
+  :global(.titleResizeHandle) {
+    width: var(--title-handle-size, 32px);
+    height: var(--title-handle-size, 32px);
+    right: calc(var(--title-handle-size, 32px) / -2);
+    bottom: calc(var(--title-handle-size, 32px) / -2);
+  }
+  :global(.selected .stateDot),
+  :global(.selected .star),
+  :global(.selected .taskCollapse) {
+    position: relative;
+  }
+  :global(.selected .stateDot)::before,
+  :global(.selected .star)::before,
+  :global(.selected .taskCollapse)::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+  }
+}
+
+:global(.fontContextMenu) {
+  width: min(320px, calc(100vw - 16px));
+}
+:global(.fontContextMenu .taskFontMenu) {
+  width: 100%;
+}
+:global(.settingsGrid .settingsSection:nth-child(2)) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+@media (max-width: 650px) {
+  :global(.settingsGrid .settingsSection:nth-child(2)) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
