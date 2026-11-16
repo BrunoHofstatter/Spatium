@@ -19,6 +19,13 @@ it('enforces the single owner, private reads, atomic versions, and idempotent se
     );
     await db.exec(sql);
     await db.exec(sql);
+    expect(
+      (
+        await db.query<{ relrowsecurity: boolean }>(
+          "select relrowsecurity from pg_class where oid = 'private.spatium_owner'::regclass",
+        )
+      ).rows,
+    ).toEqual([{ relrowsecurity: true }]);
     await db.exec(`set role anon;`);
     await expect(
       db.query('select public.spatium_read()'),

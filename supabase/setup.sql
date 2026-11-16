@@ -8,6 +8,8 @@ create table if not exists private.spatium_owner (
   singleton boolean primary key default true check (singleton),
   owner_id uuid not null unique references auth.users(id)
 );
+alter table private.spatium_owner enable row level security;
+revoke all on private.spatium_owner from public, anon, authenticated;
 do $$
 begin
   if not exists (select 1 from private.spatium_owner) then
