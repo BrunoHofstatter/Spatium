@@ -4,9 +4,11 @@ import { IndexedDbRepository, startPersistence } from './model/persistence';
 import { HomeScreen } from './home/HomeScreen';
 import { PanelScreen } from './panel/PanelScreen';
 import { SettingsScreen } from './settings/SettingsScreen';
+import { AgendaScreen } from './agenda/AgendaScreen';
 import { deleteSelection } from './canvas/SelectionToolbar';
 import styles from './styles/App.module.css';
 import './styles/grid.css';
+import './styles/agenda.css';
 import { TouchEditing } from './canvas/TouchEditing';
 import { startCloudSync } from './sync/runtime';
 import { useSync } from './sync/state';
@@ -142,6 +144,8 @@ export function App() {
         <TouchEditing />
         {hash.split('?')[0] === '#/settings' ? (
           <SettingsScreen />
+        ) : hash === '#/agenda' ? (
+          <AgendaScreen />
         ) : id && panels[id] ? (
           <PanelScreen panelId={id} areaId={match?.[2]} />
         ) : (

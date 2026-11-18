@@ -43,6 +43,8 @@ export function hasWork(doc: Doc): boolean {
     Object.keys(doc.items).length > 0 ||
     doc.panelOrder.length !== 1 ||
     doc.panels[doc.panelOrder[0]]?.title !== 'Personal' ||
+    Object.keys(doc.agenda?.entries ?? {}).length > 0 ||
+    (doc.agenda?.title ?? 'Agenda') !== 'Agenda' ||
     JSON.stringify(sorted(doc.settings)) !==
       JSON.stringify(sorted(DEFAULT_SETTINGS))
   );

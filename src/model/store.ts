@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { nanoid } from 'nanoid';
 import {
+  AGENDA_ID,
   DEFAULT_SETTINGS,
+  type AgendaEntry,
   type Doc,
   type Highlight,
   type Item,
@@ -12,6 +14,9 @@ import {
   type Viewport,
 } from './types';
 import { HISTORY_LIMIT, preserveView } from './history';
+import { agendaOf, homeOrder, isDateKey } from './agenda';
+const agendaDraft = (d: Doc) =>
+  (d.agenda ??= structuredClone({ ...agendaOf(d) }));
 export const ordered = <T extends { order: number; id: string }>(items: T[]) =>
   items.sort(
     (a, b) => a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
@@ -70,6 +75,15 @@ interface Store {
   renamePanel(id: string, title: string): void;
   deletePanel(id: string): void;
   reorderPanels(ids: string[]): void;
+  reorderHome(ids: string[]): void;
+  renameAgenda(title: string): void;
+  setAgendaHidePast(value: boolean): void;
+  addAgendaEntry(title: string, date: string): string | null;
+  updateAgendaEntry(
+    id: string,
+    patch: Partial<Pick<AgendaEntry, 'title' | 'date'>>,
+  ): void;
+  deleteAgendaEntry(id: string): void;
   setViewport(id: string, view: Viewport): void;
   setSettings(settings: Partial<Settings>, record?: boolean): void;
   createArea(panelId: string, columnId?: string): string;
@@ -215,6 +229,10 @@ export const useStore = create<Store>((set, get) => ({
     }),
   deletePanel: (id) =>
     get().transact((d) => {
+      const index = d.panelOrder.indexOf(id);
+      // Keep the Agenda card in the same place relative to the remaining panels.
+      if (d.agenda && index >= 0 && index < d.agenda.position)
+        d.agenda.position--;
       delete d.panels[id];
       d.panelOrder = d.panelOrder.filter((p) => p !== id);
       for (const item of Object.values(d.items))
@@ -228,6 +246,64 @@ export const useStore = create<Store>((set, get) => ({
         ids.every((id) => d.panels[id])
       )
         d.panelOrder = ids;
+    }),
+  reorderHome: (ids) =>
+    get().transact((d) => {
+      const current = homeOrder(d.panelOrder, agendaOf(d).position);
+      if (
+        ids.length !== current.length ||
+        new Set(ids).size !== ids.length ||
+        !ids.every((id) => current.includes(id)) ||
+        ids.every((id, i) => id === current[i])
+      )
+        return;
+      const panels = ids.filter((id) => id !== AGENDA_ID);
+      if (panels.some((id, i) => id !== d.panelOrder[i])) d.panelOrder = panels;
+      agendaDraft(d).position = ids.indexOf(AGENDA_ID);
+    }),
+  renameAgenda: (title) =>
+    get().transact((d) => {
+      if (title.trim() && agendaOf(d).title !== title.trim())
+        agendaDraft(d).title = title.trim();
+    }),
+  setAgendaHidePast: (value) =>
+    get().transact((d) => {
+      if (agendaOf(d).hidePast !== value) agendaDraft(d).hidePast = value;
+    }, false),
+  addAgendaEntry: (title, date) => {
+    if (!title.trim() || !isDateKey(date)) return null;
+    const id = nanoid(),
+      now = Date.now();
+    get().transact((d) => {
+      agendaDraft(d).entries[id] = {
+        id,
+        title: title.trim(),
+        date,
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+    return id;
+  },
+  updateAgendaEntry: (id, patch) =>
+    get().transact((d) => {
+      const entry = d.agenda?.entries[id];
+      if (!entry) return;
+      let changed = false;
+      const title = patch.title?.trim();
+      if (title && title !== entry.title) {
+        entry.title = title;
+        changed = true;
+      }
+      if (patch.date && isDateKey(patch.date) && patch.date !== entry.date) {
+        entry.date = patch.date;
+        changed = true;
+      }
+      if (changed) entry.updatedAt = Date.now();
+    }),
+  deleteAgendaEntry: (id) =>
+    get().transact((d) => {
+      if (d.agenda?.entries[id]) delete d.agenda.entries[id];
     }),
   setViewport: (id, viewport) => {
     const previous = get().doc.panels[id]?.viewport;

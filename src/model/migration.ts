@@ -1,4 +1,5 @@
 import { validateLegacy } from './legacy';
+import { isDateKey } from './agenda';
 import { STATES, type Doc, type Item } from './types';
 export const GRID_BACKUP_KEY = 'spatium-before-grid-v4';
 export const CLOUD_GRID_BACKUP_KEY = 'spatium-cloud-before-grid-v4';
@@ -243,5 +244,26 @@ export function validateGrid(d: Doc): Doc {
     !['clickPattern', 'choices'].includes(s.stateControl)
   )
     throw new Error('Invalid saved settings.');
+  if (d.agenda !== undefined) {
+    const a = d.agenda;
+    if (
+      !record(a) ||
+      typeof a.title !== 'string' ||
+      !Number.isInteger(a.position) ||
+      a.position < 0 ||
+      typeof a.hidePast !== 'boolean' ||
+      !record(a.entries)
+    )
+      throw new Error('Invalid saved agenda.');
+    for (const [id, entry] of Object.entries(a.entries))
+      if (
+        !record(entry) ||
+        entry.id !== id ||
+        typeof entry.title !== 'string' ||
+        !isDateKey(entry.date) ||
+        !finite(entry.createdAt, entry.updatedAt)
+      )
+        throw new Error('Invalid saved agenda entry.');
+  }
   return d;
 }

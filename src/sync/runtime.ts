@@ -40,6 +40,7 @@ export function startCloudSync(
       a.items !== b.items ||
       a.settings !== b.settings ||
       a.panelOrder !== b.panelOrder ||
+      a.agenda !== b.agenda ||
       Object.entries(a.panels).some(
         ([id, p]) =>
           !b.panels[id] ||

@@ -1,0 +1,412 @@
+.agendaScreen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f7f8fa;
+}
+.agendaScreen .topBar {
+  flex-shrink: 0;
+  min-height: 62px;
+}
+.agendaScreen .topActions {
+  margin-left: auto;
+}
+.agendaScreen .panelTitle {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hidePast {
+  gap: 0;
+  border-color: var(--line);
+  font-size: 12px;
+}
+.hidePast span {
+  margin-left: 0.28em;
+}
+.agendaScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.agendaBody {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) 300px;
+  justify-content: center;
+  align-items: start;
+  gap: 48px;
+  padding: 28px 32px 120px;
+}
+.agendaMain {
+  min-width: 0;
+}
+
+/* New entry */
+.agendaAdd {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0 14px;
+  background: #f7f8fa;
+}
+.agendaAdd > input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  outline: none;
+}
+.agendaAdd > input:focus,
+.agendaEntry.editing > input:focus {
+  border-color: #b9bde9;
+  box-shadow: 0 0 0 3px #6268ce1c;
+}
+.agendaAddButton {
+  height: 42px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: white;
+  font-weight: 550;
+  border-radius: 10px;
+}
+button.agendaAddButton:hover:not(:disabled) {
+  background: #555dc1;
+}
+
+/* Date picker */
+.datePicker {
+  position: relative;
+}
+.dateButton {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  user-select: none;
+}
+.dateButton > span {
+  color: var(--accent);
+}
+.datePicker[open] > .dateButton {
+  border-color: #b9bde9;
+}
+.datePopover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: 296px;
+  max-width: calc(100vw - 32px);
+  padding: 10px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px #30384918;
+}
+.datePicker.left .datePopover {
+  left: 0;
+  right: auto;
+}
+
+/* Calendar */
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.calendarHeader button {
+  width: 36px;
+  height: 36px;
+  font-size: 22px;
+  color: #7b8496;
+}
+.calendarGrid {
+  display: grid;
+  gap: 2px;
+}
+.calendarRow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.calendarRow > span {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 0;
+}
+.calendarDay {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 34px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
+}
+.calendarDay.today {
+  color: var(--accent);
+  font-weight: 700;
+}
+.calendarDay.marked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.calendarDay.selected,
+button.calendarDay.selected:hover {
+  background: var(--accent);
+  color: white;
+}
+.calendarDay.selected::after {
+  background: white;
+}
+.agendaCalendar {
+  position: sticky;
+  top: 10px;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+/* List */
+.agendaList,
+.agendaList ol,
+.agendaList ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.agendaMonth + .agendaMonth {
+  margin-top: 26px;
+}
+.agendaMonth > h2 {
+  margin: 0 0 6px;
+  padding-bottom: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #5e5991;
+  border-bottom: 2px solid #7770bd;
+}
+.agendaDay {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 76px;
+  transition: background-color 0.6s;
+}
+.agendaDay.flash {
+  background: #6268ce14;
+  transition: none;
+}
+.agendaDate {
+  display: flex;
+  flex-direction: column;
+  padding-top: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.agendaDate span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.agendaDate strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+.agendaDay.today .agendaDate {
+  color: var(--accent);
+}
+.agendaDay.today .agendaDate span {
+  color: var(--accent);
+}
+.agendaDay.past .agendaDate,
+.agendaDay.past .agendaEntryTitle {
+  opacity: 0.45;
+}
+.agendaEntry {
+  scroll-margin-top: 76px;
+}
+.agendaEntryTitle {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.agendaEntry.editing {
+  padding: 6px 0;
+}
+.agendaEntry.editing > input {
+  width: 100%;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  font-size: 15px;
+  outline: none;
+}
+.agendaEditActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.agendaEditActions > button {
+  height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+.agendaEditActions .agendaDone {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 600;
+}
+.agendaEmpty {
+  margin-top: 30px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Home preview */
+.agendaThumbnail {
+  height: 100%;
+  overflow: hidden;
+}
+.agendaThumbnail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.agendaThumbnail li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.agendaThumbDate {
+  flex-shrink: 0;
+  width: 44px;
+  color: #5e5991;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.agendaThumbTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #4b5263;
+}
+.agendaThumbnail p {
+  margin: 10px 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .agendaBody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 12px 16px 100px;
+  }
+  .agendaCalendar {
+    position: static;
+    max-width: 420px;
+    width: 100%;
+    justify-self: center;
+  }
+}
+@media (max-width: 600px) {
+  .agendaScreen .topBar {
+    gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    min-height: 60px;
+  }
+  .agendaScreen .panelTitle {
+    max-width: none;
+    min-width: 0;
+    flex: 1;
+  }
+  .agendaScreen .topActions {
+    margin-left: 0;
+    gap: 4px;
+  }
+  .hidePast span,
+  .agendaScreen .syncStatus span {
+    display: none;
+  }
+  .agendaScreen .syncStatus {
+    padding: 4px;
+  }
+  .agendaAdd {
+    flex-wrap: wrap;
+  }
+  .agendaAdd > input {
+    flex-basis: 100%;
+    font-size: 16px;
+  }
+  .agendaAdd .datePicker {
+    flex: 1;
+  }
+  .agendaAdd .dateButton {
+    width: 100%;
+  }
+  .agendaAdd .datePopover {
+    left: 0;
+    right: auto;
+  }
+  .agendaDay {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .agendaEntry.editing > input {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agendaDay {
+    transition: none;
+  }
+}

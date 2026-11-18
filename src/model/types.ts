@@ -72,7 +72,31 @@ export interface Doc {
   panelOrder: ID[];
   items: Record<ID, Item>;
   settings: Settings;
+  // Optional so version-4 documents without an agenda stay valid for every client.
+  agenda?: Agenda;
 }
+// A dated agenda entry. `date` is a local calendar day written as YYYY-MM-DD.
+export interface AgendaEntry {
+  id: ID;
+  title: string;
+  date: string;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface Agenda {
+  title: string;
+  // Index of the Agenda card among the Home panels.
+  position: number;
+  hidePast: boolean;
+  entries: Record<ID, AgendaEntry>;
+}
+export const AGENDA_ID = 'agenda';
+export const EMPTY_AGENDA: Readonly<Agenda> = Object.freeze({
+  title: 'Agenda',
+  position: 0,
+  hidePast: false,
+  entries: Object.freeze({}) as Record<ID, AgendaEntry>,
+});
 export const DEFAULT_COLORS = {
   blank: '#8b93a6',
   delayed: '#d49a2a',

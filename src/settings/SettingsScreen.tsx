@@ -13,8 +13,8 @@ import { FontSizeControl } from '../ui/FontSizeControl';
 import { SyncSettings } from '../sync/SyncSettings';
 export function SettingsScreen() {
   const settings = useStore((s) => s.doc.settings);
-  const panels = useStore((s) => s.doc.panels);
-  const back = settingsReturn(window.location.hash, panels);
+  const doc = useStore((s) => s.doc);
+  const back = settingsReturn(window.location.hash, doc);
   const [size, setSize] = useState(String(settings.taskTitleSize));
   useEffect(
     () => setSize(String(settings.taskTitleSize)),
